@@ -14,7 +14,7 @@ drum sequencer based on a Teensy 3.6
 - active steps 
   - defined by euclidian rythm
   - setting a new euclidian rythm clears "overlap" if previous sequence was longer
-  - individual steps can be toggled as well (traditional sequencing)
+  - (DONE) individual steps can be toggled as well (traditional sequencing)
 - sequence offset can be set
 - whole sequence can be muted without clearing
 - sequence step direction: forward, backward, alternating
@@ -26,7 +26,7 @@ drum sequencer based on a Teensy 3.6
   - amount of randomization per sequence
   - chance of randomization per sequence
 - number of sequences limited only by hardware
-  - preconfigured indicator for every sequence, rather than numerical?
+  - (DONE) preconfigured indicator for every sequence
   - logical usages:
     - kick            K
     - snare           S
@@ -52,7 +52,7 @@ drum sequencer based on a Teensy 3.6
   top-left character displays → when in setting editing, ↓ when in grid editing mode
     
   legend:
-  - clock sources: C = CV, M = MIDI, I = internal
+  - clock sources: C = CV, I = internal
   - 1-n number of the sequence. alternatively, show sequence indicator instead of index
   - _   empty cell on the display
   - ○   inactive step

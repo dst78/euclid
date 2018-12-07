@@ -9,6 +9,7 @@
 
 #include <LiquidCrystal.h>
 #include "display_customChars.h"
+#include "constants.h"
 
 #define LCD_PIN_RS 12
 #define LCD_PIN_EN 11
@@ -33,8 +34,17 @@ uint8_t display_seqPosY = 1;
 uint8_t display_seqRowOffset = 0;
 // For long sequences the display row needs to be scrolled horizontally. This stores that offset.
 uint8_t display_seqColOffset[8] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-// Indicators for every sequence: (K)ick, (S)nare, closed (H)ihat, open (h)ihat, (R)imshot, (C)lave, high (T)om, low (t)om
-char display_seqIndicator[8] = {'K', 'S', 'h', 'H', 'R', 'C', 'T', 't'};
+// Indicators for every sequence: (K)ick, (S)nare, closed (h)ihat, open (H)ihat, (R)imshot, (C)lave, high (T)om, low (t)om
+char display_seqIndicator[8] = {
+  DISPLAY_SEQINDICATOR_KICK, 
+  DISPLAY_SEQINDICATOR_SNARE, 
+  DISPLAY_SEQINDICATOR_HIHAT_CLOSED, 
+  DISPLAY_SEQINDICATOR_HIHAT_OPEN, 
+  DISPLAY_SEQINDICATOR_RIMSHOT, 
+  DISPLAY_SEQINDICATOR_CLAVE, 
+  DISPLAY_SEQINDICATOR_TOM_HI, 
+  DISPLAY_SEQINDICATOR_TOM_LO
+};
 
 /**
  * call this in setup()
@@ -77,16 +87,33 @@ void display_splashScreen() {
   lcd.print("Anoikis Nomads");
   lcd.setCursor(1, 1);
   lcd.print("Euclidian Sequencer");
-  lcd.setCursor(7, 2);
-  lcd.print("v 0.1");
+  lcd.setCursor(6, 3);
+  lcd.print("v ");
+  lcd.print(VERSION);
 
-  delay(1000);
+  delay(500);
 }
 
 void display_updateMenu() {
   lcd.setCursor(0, 0);
-  lcd.write((uint8_t)1);
-  lcd.write(" C120/50   mode val");
+  lcd.write(display_seqIndicator[display_calculateSeqId()]);
+  lcd.write(" ");
+  char clocksource = setting_getClocksource();
+  lcd.write(clocksource);
+  if (clocksource == SETTING_CLOCKSOURCE_INTERNAL) {
+    lcd.write(setting_getBPM());
+  } else {
+    lcd.write("   ");
+  }
+  lcd.write("s");
+  lcd.write(setting_getSwing());
+  
+  lcd.write("   ");
+  lcd.write(setting_getParameter());
+  lcd.write(" ");
+  lcd.write(setting_getParameterValue());
+
+  lcd.setCursor(display_cursorX, display_cursorY);
 }
 
 /**
@@ -249,7 +276,7 @@ void display_toggleEditMode() {
     
   } else {
     lcd.setCursor(0, 0);
-    lcd.write((uint8_t) 1);
+    lcd.write(display_seqIndicator[display_calculateSeqId()]);
     display_moveCursorToMenu();
   }
 }
@@ -258,7 +285,7 @@ void display_toggleEditMode() {
  * returns 'm' when in menu mode, 's' if in sequence editing mode
  */
 char display_getEditMode() {
-  return (display_cursorY == 0) ? 'm' : 's';
+  return (display_cursorY == 0) ? DISPLAY_EDITMODE_MENU : DISPLAY_EDITMODE_GRID;
 }
 
 /**
@@ -373,6 +400,26 @@ void display_encoderMove(int32_t delta) {
   
   if (display_cursorY == 0) {
     // menu row
+    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+      setting_changeClocksource(delta);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+      setting_changeBPM(delta);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+      setting_changeSwing(delta);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
+      // parameter
+      setting_changeParameter(delta);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+      // parameter value
+      setting_changeParameterValue(delta);
+    }
+    display_updateMenu(); 
+    lcd.setCursor(display_cursorX, display_cursorY);
+    
   } else {
     // sequence row
     if (delta < 0
@@ -421,21 +468,26 @@ void display_moveCursorLeft() {
   
   if (display_cursorY == 0) {
     // menu row
-    if (display_menuPosX == 2) {
-      // currently at clock source, do nothing
-      // @todo add horizontal scrolling
-    } else if (display_menuPosX == 4) {
+    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+      // currently at clock source, wrap around
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
       // currently at BPM
-      display_menuPosX = 2;
-    } else if (display_menuPosX == 7) {
+      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
       // currently at swing value
-      display_menuPosX = 4;
-    } else if (display_menuPosX == 13) {
-      // currently at mode
-      display_menuPosX = 7;
-    } else if (display_menuPosX == 18) {
-      // currently at mode value
-      display_menuPosX = 13;
+      if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
+        display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+      } else {
+        display_menuPosX = DISPLAY_MENUPOS_BPM;
+      }
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
+      // currently at parameter
+      display_menuPosX = DISPLAY_MENUPOS_SWING;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+      // currently at parameter value
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER;
     }
     display_cursorX = display_menuPosX;
     
@@ -470,22 +522,27 @@ void display_moveCursorRight() {
   
   if (display_cursorY == 0) {
     // menu row
-    if (display_menuPosX == 2) {
+    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
       // currently at clock source
-      display_menuPosX = 4;
-    } else if (display_menuPosX == 4) {
+      if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
+        display_menuPosX = DISPLAY_MENUPOS_SWING; 
+      } else {
+        display_menuPosX = DISPLAY_MENUPOS_BPM;
+      }
+    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
       // currently at BPM
-      display_menuPosX = 7;
-    } else if (display_menuPosX == 7) {
+      display_menuPosX = DISPLAY_MENUPOS_SWING;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
       // currently at swing value
-      display_menuPosX = 13;
-    } else if (display_menuPosX == 13) {
-      // currently at mode
-      display_menuPosX = 18;
-    } else if (display_menuPosX == 18) {
-      // currently at mode value, do nothing
-      // @todo add horizontal scrolling
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
+      // currently at parameter
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+      // currently at parameter value, wrap around
+      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
     }
+    
     display_cursorX = display_menuPosX;
     
   } else {

@@ -12,6 +12,8 @@
  * - M - contains the information whether the sequence is muted (HI = muted)
  * - PPPPP - current sequence position 
  * - LLLLL - overall sequence length 
+ * - OOO   - offset (up to 8)
+ * - DD    - direction (00 = forward, 01 = backward, 10 = alternating)
  */
 
 uint32_t sequencer_seqData[8] = {

@@ -44,7 +44,7 @@ void encoder_update() {
  * interrupt handler routine for the thumbstick pushbutton
  */
 void encoder_btnHandler() {
-  if (display_getEditMode() == 's') {
+  if (display_getEditMode() == DISPLAY_EDITMODE_GRID) {
     // sequence editing mode
     if (sequencer_toggleSeqStep(display_calculateSeqId(), display_calculateSeqStep())) {
       display_updateSequenceStep();

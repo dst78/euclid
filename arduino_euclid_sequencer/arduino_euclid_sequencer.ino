@@ -34,7 +34,6 @@
  http://www.pjrc.com/teensy/td_libs_LiquidCrystal.html
  http://www.arduino.cc/en/Tutorial/LiquidCrystal
  */
-
 #define DEBUG true
 #define DEBUG_DISPLAY true
 #define DEBUG_ENCODER true
