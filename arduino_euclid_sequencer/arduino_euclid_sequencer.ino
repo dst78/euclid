@@ -39,6 +39,7 @@
 #define DEBUG_ENCODER true
 #define DEBUG_SEQUENCER true
 #define DEBUG_THUMBSTICK true
+#define DEBUG_SETTING true
 
 #define PIN_LED 13
   

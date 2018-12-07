@@ -95,10 +95,11 @@ void display_splashScreen() {
 }
 
 void display_updateMenu() {
+  char clocksource = setting_getClocksource();
+
   lcd.setCursor(0, 0);
   lcd.write(display_seqIndicator[display_calculateSeqId()]);
   lcd.write(" ");
-  char clocksource = setting_getClocksource();
   lcd.write(clocksource);
   if (clocksource == SETTING_CLOCKSOURCE_INTERNAL) {
     lcd.write(setting_getBPM());
@@ -111,7 +112,15 @@ void display_updateMenu() {
   lcd.write("   ");
   lcd.write(setting_getParameter());
   lcd.write(" ");
-  lcd.write(setting_getParameterValue());
+  if (display_menuPosX != DISPLAY_MENUPOS_PARAMETER_VALUE
+      || display_cursorY != 0) {
+    // show stored value when not editing the parameter value
+    lcd.write(setting_getParameterValue());
+  } else {
+    // show temporary value when editing the parameter value
+    lcd.write(setting_getParameterTmpValue());
+  }
+    
 
   lcd.setCursor(display_cursorX, display_cursorY);
 }
@@ -276,9 +285,10 @@ void display_toggleEditMode() {
     
   } else {
     lcd.setCursor(0, 0);
-    lcd.write(display_seqIndicator[display_calculateSeqId()]);
     display_moveCursorToMenu();
   }
+  
+  display_updateMenu();
 }
 
 /**
@@ -322,16 +332,20 @@ void display_moveCursorUp() {
       // sequencer rows
       display_seqPosY = max(1, display_seqPosY - 1);
       display_cursorY = display_seqPosY;
-      
+      display_updateMenu();
+        
     } else if (display_cursorY == 1) {
       // seqRowOffset is zero-based, display_seqPosY starts at 1 so there is no "-1" calculation
       newOffset = max(0, display_seqRowOffset - 1);
         
       if (display_seqRowOffset != newOffset) {
         display_seqRowOffset = newOffset;
+        
+        display_updateMenu();
         display_updateSequenceRow(0);
         display_updateSequenceRow(1);
-        display_updateSequenceRow(2);        
+        display_updateSequenceRow(2);
+        
       }
     }
 
@@ -364,12 +378,15 @@ void display_moveCursorDown() {
       // sequencer rows
       display_seqPosY = min(3, display_seqPosY + 1);
       display_cursorY = display_seqPosY;
+      display_updateMenu();
       
     } else if (display_cursorY == 3) {
       newOffset = min(5, display_seqRowOffset+1);
       
       if (display_seqRowOffset != newOffset) {
         display_seqRowOffset = newOffset;
+        display_updateMenu();
+
         display_updateSequenceRow(0);
         display_updateSequenceRow(1);
         display_updateSequenceRow(2);
@@ -409,11 +426,11 @@ void display_encoderMove(int32_t delta) {
     } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
       setting_changeSwing(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
       // parameter
       setting_changeParameter(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
       // parameter value
       setting_changeParameterValue(delta);
     }
@@ -448,8 +465,6 @@ void display_encoderMove(int32_t delta) {
       display_seqPosX = min(min(1+seqLen, 17), display_seqPosX+1);
       display_cursorX = display_seqPosX;
     }
-    //display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX+delta));
-    //display_cursorX = display_seqPosX;
   }
   
   lcd.setCursor(display_cursorX, display_cursorY);
@@ -470,7 +485,7 @@ void display_moveCursorLeft() {
     // menu row
     if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
       // currently at clock source, wrap around
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
     } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
       // currently at BPM
       display_menuPosX = DISPLAY_MENUPOS_CLOCK;
@@ -482,12 +497,12 @@ void display_moveCursorLeft() {
         display_menuPosX = DISPLAY_MENUPOS_BPM;
       }
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
       // currently at parameter
       display_menuPosX = DISPLAY_MENUPOS_SWING;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
       // currently at parameter value
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER;
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
     }
     display_cursorX = display_menuPosX;
     
@@ -534,11 +549,11 @@ void display_moveCursorRight() {
       display_menuPosX = DISPLAY_MENUPOS_SWING;
     } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
       // currently at swing value
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER) {
-      // currently at parameter
       display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
     } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+      // currently at parameter
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
       // currently at parameter value, wrap around
       display_menuPosX = DISPLAY_MENUPOS_CLOCK;
     }
