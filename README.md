@@ -1,6 +1,8 @@
 # Euclidian Rythm Drum Sequencer
 drum sequencer based on a Teensy 3.6
 
+**At this time the whole project is in a very bare bones state probably isn't even working. If you're looking for a functional module then I'm afraid you'll have to come back at a later time.**
+
 ## Features
 - selectable MIDI-out channel
 - clock: internal or volca-style pulse from a 3.5mm jack
