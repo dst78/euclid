@@ -41,27 +41,28 @@ drum sequencer based on a Teensy 3.6
 - live triggering (playing a step once without changing the stored pattern)
     
 ## Details on the display
-- 20x4 LCD display to display things
+20x4 LCD display to display things
 
+```
   → C120/50   mode val   // status line: clock source BPM/swing, mode indicator, mode-dependent value
   3|∙X◆∙∙∙◆∙░∙◆∙∙∙◆∙|↑   // 16-step sequence, up-arrow indicates vertical scrolling
   4←∙◆∙X◆∙∙∙◆∙∙◆∙∙∙◆→_   // long sequence, left/right arrows indicate horizontal scrolling
   5|∙X∙∙∙∙|__________↓   // 6-step sequence, down-arrow indicates vertical scrolling
-  
+```  
   top-left character displays → when in setting editing, ↓ when in grid editing mode
     
   legend:
-    clock sources: C = CV, M = MIDI, I = internal
-    1-n number of the sequence. alternatively, show sequence indicator instead of index
-    _   empty cell on the display
-    ○   inactive step
-    ●   active step
-    X   current step (when sequencer is running)
-    ░   cursor position, maybe try to create a pencil icon? blinks with what is underneath
-    ↑   display isn't showing the first sequence and can be scrolled up
-    ↓   display isn't showing the last sequence and can be scrolled down
-    ←   sequence row isn't shown from the beginning and can be scrolled left
-    →   sequence row isn't shown until the end and can be scrolled right
+  - clock sources: C = CV, M = MIDI, I = internal
+  - 1-n number of the sequence. alternatively, show sequence indicator instead of index
+  - _   empty cell on the display
+  - ○   inactive step
+  - ●   active step
+  - X   current step (when sequencer is running)
+  - ░   cursor position, maybe try to create a pencil icon? blinks with what is underneath
+  - ↑   display isn't showing the first sequence and can be scrolled up
+  - ↓   display isn't showing the last sequence and can be scrolled down
+  - ←   sequence row isn't shown from the beginning and can be scrolled left
+  - →   sequence row isn't shown until the end and can be scrolled right
 
 ## Details on the usability concept
 ### toggle switch for clock source
