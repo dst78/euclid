@@ -46,14 +46,13 @@
 void setup() {
   #if DEBUG || DEBUG_DISPLAY || DEBUG_ENCODER || DEBUG_SEQUENCER || DEBUG_THUMBSTICK
   Serial.begin(9600);
-  Serial.println("Encoder Test:");
   #endif
   
   pinMode(PIN_LED, OUTPUT);
   
+  display_init();
   encoder_init();
   thumbstick_init();
-  display_init();
 }
 
 void loop() {

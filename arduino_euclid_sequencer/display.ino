@@ -50,15 +50,37 @@ void display_init() {
   lcd.createChar(6, display_charStepCurrent);
   // set up the LCD's number of rows and columns: 
   lcd.begin(20, 4);
+
+  display_splashScreen();
+  display_gui();
+}
+
+/**
+ * call this after splashScreen()
+ */
+void display_gui() {
   lcd.clear();  
   lcd.cursor();
-  //lcd.blink();
 
   display_updateMenu();
   display_updateSequenceRow(0);
   display_updateSequenceRow(1);
   display_updateSequenceRow(2);
   display_moveCursorToMenu();
+}
+
+void display_splashScreen() {
+  lcd.clear();
+  lcd.noCursor();
+  
+  lcd.setCursor(3, 0);
+  lcd.print("Anoikis Nomads");
+  lcd.setCursor(1, 1);
+  lcd.print("Euclidian Sequencer");
+  lcd.setCursor(7, 2);
+  lcd.print("v 0.1");
+
+  delay(1000);
 }
 
 void display_updateMenu() {
@@ -87,7 +109,7 @@ uint8_t display_calculateSeqStep() {
  * row indicates the physical sequence row on the display (0-2), NOT the seqId!
  */
 void display_updateSequenceRow(uint32_t row) {
-  uint8_t i, iRel;
+  uint8_t i;
   uint8_t seqId  = display_seqRowOffset + row;
   uint8_t endPos = display_seqColOffset[seqId] + 16;
   uint32_t seq   = sequencer_getSeq(seqId);
@@ -107,15 +129,13 @@ void display_updateSequenceRow(uint32_t row) {
   }
 
   // display the sequence itself
-  iRel = 0;
-  
   for (i = display_seqColOffset[seqId]; i < endPos; i++) {  
-    if (iRel < seqLen) {
-      if (iRel == seqPos) {
+    if (i < seqLen) {
+      if (i == seqPos) {
         // current position
         lcd.write((uint8_t) 6);
         
-      } else if ((seq & (1 << iRel)) == (uint32_t) (1 << iRel)) {
+      } else if ((seq & (1 << (31-i))) == (uint32_t) (1 << (31-i))) {
         // active step
         lcd.write((uint8_t) 4);
         
@@ -128,11 +148,10 @@ void display_updateSequenceRow(uint32_t row) {
       // behind sequence, clear character
       lcd.print(" ");
     }
-    iRel++;
   }
 
   // pipe if sequence doesn't extend visible space, arrowRight otherwise
-  if (iRel >= sequencer_getLen(seqId)) {
+  if (i >= sequencer_getLen(seqId)) {
     lcd.print("|");
   } else {
     lcd.write((uint8_t) 1);
@@ -271,24 +290,31 @@ void display_moveCursorUp() {
   if (display_cursorY == 0) {
     // menu row
     
-  } else if (display_cursorY > 1) {
-    // sequencer rows
-    display_seqPosY = max(1, display_seqPosY - 1);
-    display_cursorY = display_seqPosY;
-    lcd.setCursor(display_cursorX, display_cursorY);
-    
-  } else if (display_cursorY == 1) {
-    // seqRowOffset is zero-based, display_seqPosY starts at 1 so there is no "-1" calculation
-    newOffset = max(0, display_seqRowOffset - 1);
+  } else {
+    if (display_cursorY > 1) {
+      // sequencer rows
+      display_seqPosY = max(1, display_seqPosY - 1);
+      display_cursorY = display_seqPosY;
       
-    if (display_seqRowOffset != newOffset) {
-      display_seqRowOffset = newOffset;
-      display_updateSequenceRow(0);
-      display_updateSequenceRow(1);
-      display_updateSequenceRow(2);    
-      
-      lcd.setCursor(display_cursorX, display_cursorY);
+    } else if (display_cursorY == 1) {
+      // seqRowOffset is zero-based, display_seqPosY starts at 1 so there is no "-1" calculation
+      newOffset = max(0, display_seqRowOffset - 1);
+        
+      if (display_seqRowOffset != newOffset) {
+        display_seqRowOffset = newOffset;
+        display_updateSequenceRow(0);
+        display_updateSequenceRow(1);
+        display_updateSequenceRow(2);        
+      }
     }
+
+    // make sure cursor isn't further right than sequence length
+    uint8_t seqId = display_calculateSeqId();
+    uint8_t seqLen = sequencer_getLen(seqId);
+    display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
+    display_cursorX = display_seqPosX;
+    
+    lcd.setCursor(display_cursorX, display_cursorY);
   }
 
   #if DEBUG_DISPLAY
@@ -306,23 +332,30 @@ void display_moveCursorDown() {
   
   if (display_cursorY == 0) {
     // menu row
-  } else if (display_cursorY < 3) {
-    // sequencer rows
-    display_seqPosY = min(3, display_seqPosY + 1);
-    display_cursorY = display_seqPosY;
-    lcd.setCursor(display_cursorX, display_cursorY);
-    
-  } else if (display_cursorY == 3) {
-    newOffset = min(5, display_seqRowOffset+1);
-    
-    if (display_seqRowOffset != newOffset) {
-      display_seqRowOffset = newOffset;
-      display_updateSequenceRow(0);
-      display_updateSequenceRow(1);
-      display_updateSequenceRow(2);
-
-      lcd.setCursor(display_cursorX, display_cursorY);
+  } else {
+    if (display_cursorY < 3) {
+      // sequencer rows
+      display_seqPosY = min(3, display_seqPosY + 1);
+      display_cursorY = display_seqPosY;
+      
+    } else if (display_cursorY == 3) {
+      newOffset = min(5, display_seqRowOffset+1);
+      
+      if (display_seqRowOffset != newOffset) {
+        display_seqRowOffset = newOffset;
+        display_updateSequenceRow(0);
+        display_updateSequenceRow(1);
+        display_updateSequenceRow(2);
+      }
     }
+
+    // make sure cursor isn't further right than sequence length
+    uint8_t seqId = display_calculateSeqId();
+    uint8_t seqLen = sequencer_getLen(seqId);
+    display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
+    display_cursorX = display_seqPosX;
+    
+    lcd.setCursor(display_cursorX, display_cursorY);
   }
 
   #if DEBUG_DISPLAY
@@ -341,9 +374,35 @@ void display_encoderMove(int32_t delta) {
   if (display_cursorY == 0) {
     // menu row
   } else {
-    // sequence rows
-    display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX+delta));
-    display_cursorX = display_seqPosX;
+    // sequence row
+    if (delta < 0
+        && display_seqPosX == 2
+        && display_seqColOffset[seqId] > 0) {
+      // can scroll left
+      display_seqColOffset[seqId]--;
+      display_updateSequenceRow(display_cursorY-1);
+      
+    } else if (delta < 0 
+        && display_seqPosX > 2) {
+      // can move left
+      display_seqPosX = max(2, display_seqPosX-1);
+      display_cursorX = display_seqPosX;
+      
+    } else if (delta > 0
+        && display_seqPosX == 17 
+        && seqLen - display_seqColOffset[seqId] > 16) {
+      // can scroll right
+      display_seqColOffset[seqId]++;
+      display_updateSequenceRow(display_seqPosY-1);      
+      
+    } else if (delta > 0
+        && display_seqPosX < 17) {
+      // can move right
+      display_seqPosX = min(min(1+seqLen, 17), display_seqPosX+1);
+      display_cursorX = display_seqPosX;
+    }
+    //display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX+delta));
+    //display_cursorX = display_seqPosX;
   }
   
   lcd.setCursor(display_cursorX, display_cursorY);
@@ -358,6 +417,8 @@ void display_encoderMove(int32_t delta) {
  * sequence rows go step by step but not all the way left/right
  */
 void display_moveCursorLeft() {
+  uint8_t seqId = display_calculateSeqId();
+  
   if (display_cursorY == 0) {
     // menu row
     if (display_menuPosX == 2) {
@@ -379,8 +440,17 @@ void display_moveCursorLeft() {
     display_cursorX = display_menuPosX;
     
   } else {
-    display_seqPosX = max(2, display_seqPosX-1);
-    display_cursorX = display_seqPosX;
+    // sequence row
+    if (display_seqPosX == 2
+        && display_seqColOffset[seqId] > 0) {
+      // can scroll left
+      display_seqColOffset[seqId]--;
+      display_updateSequenceRow(display_cursorY-1);
+      
+    } else {
+      display_seqPosX = max(2, display_seqPosX-1);
+      display_cursorX = display_seqPosX;
+    }
   }
   
   lcd.setCursor(display_cursorX, display_cursorY);
@@ -419,8 +489,18 @@ void display_moveCursorRight() {
     display_cursorX = display_menuPosX;
     
   } else {
-    display_seqPosX = min(min(1+seqLen, 17), display_seqPosX+1);
-    display_cursorX = display_seqPosX;
+    // sequencer row
+    if (display_seqPosX == 17 
+      && seqLen - display_seqColOffset[seqId] > 16) {
+      // can scroll right
+      display_seqColOffset[seqId]++;
+      display_updateSequenceRow(display_seqPosY-1);      
+      
+    } else {
+      // move cursor right
+      display_seqPosX = min(min(1+seqLen, 17), display_seqPosX+1);
+      display_cursorX = display_seqPosX;
+    }
   }
   
   lcd.setCursor(display_cursorX, display_cursorY);
@@ -432,11 +512,14 @@ void display_moveCursorRight() {
 
 #if DEBUG_DISPLAY
 void display_positionDebug() {
+  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqLen = sequencer_getLen(seqId);
   Serial.println("--------------");
+  Serial.print("offsets: "); Serial.print(display_seqColOffset[seqId]); Serial.print(" / "); Serial.println(display_seqRowOffset);
   Serial.println("new positions:");
   Serial.print("cursor: "); Serial.print(display_cursorX); Serial.print(" / "); Serial.println(display_cursorY);
   Serial.print("menu  : "); Serial.print(display_menuPosX); Serial.print(" / "); Serial.println(display_menuPosY);
   Serial.print("grid  : "); Serial.print(display_seqPosX); Serial.print(" / "); Serial.println(display_seqPosY);
-  Serial.print("seq   : "); Serial.print(display_calculateSeqId()); Serial.print(" "); Serial.println(display_calculateSeqStep());
+  Serial.print("seq   : "); Serial.print(seqId); Serial.print(" pos: "); Serial.print(display_calculateSeqStep()); Serial.print(" len: "); Serial.println(seqLen);
 }
 #endif

@@ -27,11 +27,11 @@ uint32_t sequencer_seqData[8] = {
 
 // information about mute-state, position and length
 uint16_t sequencer_seqInfo[8] = {
+  0x0008,
+  0x0015,
   0x0015,
   0x0010,
   0x0008,
-  0x0000,
-  0x0000,
   0x0000,
   0x0000,
   0x0000,
