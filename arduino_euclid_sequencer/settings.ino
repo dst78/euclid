@@ -282,11 +282,10 @@ void setting_changeParameterValue(int32_t delta) {
     setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = 0;
-    
+    setting_parameterValue_tmp = min(31, max(0, setting_parameterValue_tmp + delta));    
   } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
+    setting_parameterValue_tmp = min(31, max(0, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SDIR_MAX, max(SETTING_PARAMETER_VALUE_SDIR_MIN, setting_parameterValue_tmp + delta));

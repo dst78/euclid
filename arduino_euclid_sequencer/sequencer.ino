@@ -25,28 +25,28 @@ uint32_t sequencer_seqData[8] = {
  * - . - represents an unused bit
  * - M - contains the information whether the sequence is muted (HI = muted)
  * - L - overall sequence length, 6-bit for up to 32 steps (technically we could store 0-63 but that makes no sense)
- * - P - current sequence position, 6-bit 
- * - O - play offset, 6-bit
+ * - P - current sequence position, 0-31, 5-bit 
+ * - O - play offset, 0-31, 5-bit
  * - N - MIDI note (this is an indirect index. the actual note will be offset by the amount of SETTING_PARAMETER_VALUE_MNTE_MIN)
 
  */
 uint32_t sequencer_seqInfo[8] = {
-//  M......NNNNNNNOOOOOOPPPPPPLLLLLL
-  0b00000000100100000000000000001000,
-  0b00000000100110000000000000000000,
-  0b00000000101010000000000000000000,
-  0b00000000101110000000000000000000,
-  0b00000000100101000000000000000000,
-  0b00000001001011000000000000000000,
-  0b00000000110000000000000000000000,
-  0b00000000101001000000000000000000,
+//  M........NNNNNNNOOOOOPPPPPLLLLLL
+  0b00000000001001000000000000001000,
+  0b00000000001001100000000000000000,
+  0b00000000001010100000000000000000,
+  0b00000000001011100000000000000000,
+  0b00000000001001010000000000000000,
+  0b00000000010010110000000000000000,
+  0b00000000001100000000000000000000,
+  0b00000000001010010000000000000000,
 };
-
+//                                  M........NNNNNNNOOOOOPPPPPLLLLLL
 uint32_t sequencer_maskInfoMute = 0b10000000000000000000000000000000;
 uint32_t sequencer_maskInfoLen  = 0b00000000000000000000000000111111;
-uint32_t sequencer_maskInfoPos  = 0b00000000000000000000111111000000;
-uint32_t sequencer_maskInfoOff  = 0b00000000000000111111000000000000;
-uint32_t sequencer_maskInfoMNte = 0b00000001111111000000000000000000;
+uint32_t sequencer_maskInfoPos  = 0b00000000000000000000011111000000;
+uint32_t sequencer_maskInfoOff  = 0b00000000000000001111100000000000;
+uint32_t sequencer_maskInfoMNte = 0b00000000011111110000000000000000;
 
 /**
  * returns a sequence as 32 bit number
@@ -106,7 +106,7 @@ void sequencer_setPos(uint8_t seqId, uint8_t seqPos) {
  * return value will never be larger than 32
  */
 uint8_t sequencer_getOffset(uint8_t seqId) {
-  return (sequencer_seqInfo[seqId] & sequencer_maskInfoOff) >> 12;
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoOff) >> 11;
 }
 
 /**
@@ -114,21 +114,21 @@ uint8_t sequencer_getOffset(uint8_t seqId) {
  * only the lowest 6 bits will be taken into account
  */
 void sequencer_setOffset(uint8_t seqId, uint8_t seqOff) {
-  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoOff) | ((seqOff << 12) & sequencer_maskInfoOff);
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoOff) | ((seqOff << 11) & sequencer_maskInfoOff);
 }
 
 /**
  * returns the indirect MIDI note index
  */
 uint8_t sequencer_getMidiNote(uint8_t seqId) {
-  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMNte) >> 18;
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMNte) >> 16;
 }
 
 /**
  * updates the indirect MIDI note index
  */
 void sequencer_setMidiNote(uint8_t seqId, uint8_t mnte) {
-  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMNte) | ((mnte << 18) & sequencer_maskInfoMNte);
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMNte) | ((mnte << 16) & sequencer_maskInfoMNte);
 }
 
 /**
