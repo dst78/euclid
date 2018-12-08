@@ -2,7 +2,7 @@
  * data structures and handler functions for settings
  */
 
-char setting_clocksource = SETTING_CLOCKSOURCE_CV;
+char setting_clocksource = SETTING_CLOCKSOURCE_INTERNAL;
 
 #define SETTING_BPM_MIN 30
 #define SETTING_BPM_MAX 240
@@ -95,13 +95,22 @@ char setting_getClocksource() {
 void setting_changeClocksource(int32_t delta) {
   if (setting_clocksource == SETTING_CLOCKSOURCE_CV) {
     setting_clocksource = SETTING_CLOCKSOURCE_INTERNAL;
+    clock_startInternal();
   } else {
     setting_clocksource = SETTING_CLOCKSOURCE_CV;
+    clock_endInternal();
   }
 }
 
 /**
- * returns the current BPM
+ * returns the BPM as a number
+ */
+uint8_t setting_getRawBPM() {
+  return setting_bpm;
+}
+
+/**
+ * returns the current BPM as array of char
  */
 char* setting_getBPM() {
   char* returnValue = (char *) malloc(3);
@@ -115,6 +124,7 @@ char* setting_getBPM() {
  */
 void setting_changeBPM(int32_t delta) {
   setting_bpm = min(SETTING_BPM_MAX, max(SETTING_BPM_MIN, setting_bpm + delta));
+  clock_setInterval(setting_bpm);
 }
 
 /**
@@ -326,6 +336,7 @@ void setting_persistParameterValue() {
   } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     setting_parameterValue_Spul[seqId] = setting_parameterValue_tmp;
+    // @todo calculate new Euclidian Rythm when this is persisted
   } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
     sequencer_setOffset(seqId, setting_parameterValue_tmp);

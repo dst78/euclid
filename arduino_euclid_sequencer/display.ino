@@ -504,7 +504,14 @@ void display_encoderMove(int32_t delta) {
  */
 void display_encoderButtonPress() {
   if (display_cursorY == 0) {
-    if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK
+        && setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
+      // clock source was changed to internal, hop to BPM position
+      display_menuPosX = DISPLAY_MENUPOS_BPM;
+      display_cursorX = display_menuPosX;
+      lcd.setCursor(display_cursorX, display_cursorY);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
       // menu parameter name was selected, move cursor to parameter value
       display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
       display_cursorX = display_menuPosX;

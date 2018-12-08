@@ -35,22 +35,21 @@
  http://www.arduino.cc/en/Tutorial/LiquidCrystal
  */
 #define DEBUG true
+#define DEBUG_CLOCK true
 #define DEBUG_DISPLAY true
 #define DEBUG_ENCODER true
 #define DEBUG_SEQUENCER true
 #define DEBUG_THUMBSTICK true
 #define DEBUG_SETTING true
 
-#define PIN_LED 13
   
 void setup() {
   #if DEBUG || DEBUG_DISPLAY || DEBUG_ENCODER || DEBUG_SEQUENCER || DEBUG_THUMBSTICK
   Serial.begin(9600);
   #endif
-  
-  pinMode(PIN_LED, OUTPUT);
-  
+
   display_init();
+  clock_init();
   encoder_init();
   thumbstick_init();
 }
