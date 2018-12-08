@@ -56,8 +56,9 @@ void display_init() {
   lcd.createChar(2, display_charArrowDown);
   lcd.createChar(3, display_charArrowLeft);
   lcd.createChar(4, display_charStepActive);
-  lcd.createChar(5, display_charStepInactive);
-  lcd.createChar(6, display_charStepCurrent);
+  lcd.createChar(5, display_charStepActiveCurrent);
+  lcd.createChar(6, display_charStepInactive);
+  lcd.createChar(7, display_charStepInactiveCurrent);
   // set up the LCD's number of rows and columns: 
   lcd.begin(20, 4);
 
@@ -167,17 +168,23 @@ void display_updateSequenceRow(uint32_t row) {
   // display the sequence itself
   for (i = display_seqColOffset[seqId]; i < endPos; i++) {  
     if (i < seqLen) {
-      if (i == seqPos) {
-        // current position
-        lcd.write((uint8_t) 6);
-        
-      } else if ((seq & (1 << (31-i))) == (uint32_t) (1 << (31-i))) {
-        // active step
-        lcd.write((uint8_t) 4);
+      if ((seq & (1 << (31-i))) == (uint32_t) (1 << (31-i))) {
+        if (i == seqPos) {
+          // current step, active
+          lcd.write((uint8_t) 5);
+        } else {
+          // active step
+          lcd.write((uint8_t) 4);
+        }
         
       } else {
-        // inactive step
-        lcd.write((uint8_t) 5);
+        if (i == seqPos) {
+          // current step, inactive
+          lcd.write((uint8_t) 7);
+        } else {
+          // inactive step
+          lcd.write((uint8_t) 6);
+        }
       }
       
     } else {
@@ -256,17 +263,24 @@ void display_updateSequenceStep(uint8_t seqId, uint8_t seqStep) {
       #if DEBUG_DISPLAY
       Serial.println("character is visible");
       #endif
-    if (seqStep == seqPos) {
-      // current position
-      lcd.write((uint8_t) 6);
-      
-    } else if ((seq & (1 << (31-seqStep))) == (uint32_t) (1 << (31-seqStep))) {
-      // active step
-      lcd.write((uint8_t) 4);
+    if ((seq & (1 << (31-seqStep))) == (uint32_t) (1 << (31-seqStep))) {
+      if (seqStep == seqPos) {
+        // current step, active
+        lcd.write((uint8_t) 5);
+      } else {
+        // active step
+        lcd.write((uint8_t) 4);
+      }
       
     } else {
-      // inactive step
-      lcd.write((uint8_t) 5);
+      if (seqStep == seqPos) {
+        // current step, inactive
+        lcd.write((uint8_t) 7);
+      } else {
+        // inactive step
+        lcd.write((uint8_t) 6);
+        
+      }
     }
 
     // put the cursor back on the same step
