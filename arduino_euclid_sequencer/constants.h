@@ -4,7 +4,7 @@
  * constants which signify pin assignments etc are defined within the script 
  * that cares and won't be accessed across scripts
  */
-#define VERSION "0.2.0"
+#define VERSION "0.2.1"
 
 // related to the LCD display
 #define DISPLAY_EDITMODE_MENU 'm'

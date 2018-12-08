@@ -114,7 +114,23 @@ uint8_t sequencer_getOffset(uint8_t seqId) {
  * only the lowest 6 bits will be taken into account
  */
 void sequencer_setOffset(uint8_t seqId, uint8_t seqOff) {
+  int8_t diffOffset = seqOff - sequencer_getOffset(seqId); // amount of bits to shift
+  uint8_t seqLen    = sequencer_getLen(seqId);
+  
+  // persist new offset
   sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoOff) | ((seqOff << 11) & sequencer_maskInfoOff);
+  
+  // rotating bitshift sequence 
+  // @todo need to AND with LO-bits beyond the sequence length
+  if (diffOffset > 0) {
+    //                          right-shift leading bits                   wrap lower bits around to become high bits             apply a mask to zero-out overhang beyond sequence length 
+    sequencer_seqData[seqId] = ((sequencer_seqData[seqId] >> diffOffset) | (sequencer_seqData[seqId] << (seqLen - diffOffset))) & (0xFFFF << (32 - seqLen));
+    
+  } else if (diffOffset < 0) {
+    diffOffset *= -1;
+    //                          right-shift leading bits                   wrap lower bits around to become high bits             apply a mask to zero-out overhang beyond sequence length 
+    sequencer_seqData[seqId] = ((sequencer_seqData[seqId] << diffOffset) | (sequencer_seqData[seqId] >> (seqLen - diffOffset))) & (0xFFFF << (32 - seqLen));
+  }
 }
 
 /**
