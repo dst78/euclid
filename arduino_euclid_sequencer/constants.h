@@ -27,32 +27,3 @@
 
 #define SETTING_CLOCKSOURCE_CV       'C'
 #define SETTING_CLOCKSOURCE_INTERNAL 'I'
-
-
-#define SETTING_PARAMETER_NAME_MCHN "Mchn" // MIDI channel for the instrument
-#define SETTING_PARAMETER_NAME_SLEN "Slen" // sequence length
-#define SETTING_PARAMETER_NAME_SPUL "Spul" // active sequence pulses - this is in the Euclidian Rythm sense
-#define SETTING_PARAMETER_NAME_SROT "Srot" // sequence offset - this is in the Euclidian Rythm sense
-#define SETTING_PARAMETER_NAME_SDIR "Sdir" // sequence play direction - forward, backward, alternating
-#define SETTING_PARAMETER_NAME_SNLN "Snln" // sequence note length - 16th, 8th, 4th
-#define SETTING_PARAMETER_NAME_SGTE "Sgte" // sequence gate length
-#define SETTING_PARAMETER_NAME_SVEL "Svel" // sequence note velocity
-#define SETTING_PARAMETER_NAME_SNTE "Snte" // sequence MIDI note
-#define SETTING_PARAMETER_NAME_SRDA "Srda" // sequence randomization amount
-#define SETTING_PARAMETER_NAME_SRDC "Srdc" // sequence randomization chance
-
-#define SETTING_PARAMETER_VALUE_SDIR_MIN 0
-#define SETTING_PARAMETER_VALUE_SDIR_MAX 2
-
-#define SETTING_PARAMETER_VALUE_SNLN_SIXTEENTH 16
-#define SETTING_PARAMETER_VALUE_SNLN_EIGHTHS    8
-#define SETTING_PARAMETER_VALUE_SNLN_QUARTERS   4
-
-#define SETTING_PARAMETER_VALUE_SGTE_MIN  1
-#define SETTING_PARAMETER_VALUE_SGTE_MAX 99
-
-#define SETTING_PARAMETER_VALUE_SVEL_MIN   1
-#define SETTING_PARAMETER_VALUE_SVEL_MAX 127
-
-#define SETTING_PARAMETER_VALUE_SNTE_MIN 24 // C1
-#define SETTING_PARAMETER_VALUE_SNTE_MAX 96 // C7
