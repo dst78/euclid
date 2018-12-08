@@ -294,7 +294,7 @@ void setting_changeParameterValue(int32_t delta) {
     setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = min(sequencer_getLen(seqId) - 1, max(0, setting_parameterValue_tmp + delta));    
+    setting_parameterValue_tmp = min(sequencer_getLen(seqId), max(0, setting_parameterValue_tmp + delta));    
   } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = min(sequencer_getLen(seqId) - 1, max(0, setting_parameterValue_tmp + delta));
