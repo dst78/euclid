@@ -28,7 +28,7 @@ uint8_t display_menuPosX = 2;
 uint8_t display_menuPosY = 0;
 // Stored cursor position in the sequence section - used in display_moveCursorToSeq()
 // these are display (!) positions, not sequence offsets. rows are 1-3, cols are 2-17
-uint8_t display_seqPosX = 3; 
+uint8_t display_seqPosX = 2; 
 uint8_t display_seqPosY = 1;
 // The instrument has 8 sequencers but the display only has 3 rows to display them, this variable defines the offset.
 uint8_t display_seqRowOffset = 0;
