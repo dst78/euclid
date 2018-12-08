@@ -46,7 +46,7 @@ void encoder_update() {
 void encoder_btnHandler() {
   if (display_getEditMode() == DISPLAY_EDITMODE_GRID) {
     // sequence editing mode
-    if (sequencer_toggleSeqStep(display_calculateSeqId(), display_calculateSeqStep())) {
+    if (sequencer_toggleSeqStep(display_getSeqId(), display_calculateSeqStep())) {
       // update display only when sequence update was successful
       display_updateSequenceStep();
     }

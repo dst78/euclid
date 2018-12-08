@@ -150,7 +150,7 @@ void setting_changeParameter(int32_t delta) {
   setting_parameterIndex = max(0, min(setting_parameterNum, setting_parameterIndex + delta));
 
   // set temporary parameter value to actual value of new parameter to be safe
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
 
   if (setting_parameterIndex == 0) {
     // SETTING_PARAMETER_NAME_MCHN - MIDI channel for the instrument
@@ -193,7 +193,7 @@ void setting_changeParameter(int32_t delta) {
  */
 char* setting_getParameterValue() {
   char* returnValue = (char *) malloc(3);
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
 
   if (setting_parameterIndex == 0) {
     // SETTING_PARAMETER_NAME_MCHN - MIDI channel for the instrument
@@ -306,7 +306,7 @@ void setting_changeParameterValue(int32_t delta) {
  * to the actual storage, making the change effective.
  */
 void setting_persistParameterValue() {
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
   
   if (setting_parameterIndex == 0) {
     // SETTING_PARAMETER_NAME_MCHN - MIDI channel for the instrument

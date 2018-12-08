@@ -45,6 +45,8 @@ char display_seqIndicator[8] = {
   DISPLAY_SEQINDICATOR_TOM_HI, 
   DISPLAY_SEQINDICATOR_TOM_LO
 };
+// cached value
+uint8_t display_seqId;
 
 /**
  * call this in setup()
@@ -99,7 +101,7 @@ void display_updateMenu() {
   char clocksource = setting_getClocksource();
 
   lcd.setCursor(0, 0);
-  lcd.write(display_seqIndicator[display_calculateSeqId()]);
+  lcd.write(display_seqIndicator[display_getSeqId()]);
   lcd.write(" ");
   lcd.write(clocksource);
   if (clocksource == SETTING_CLOCKSOURCE_INTERNAL) {
@@ -121,23 +123,29 @@ void display_updateMenu() {
     // show temporary value when editing the parameter value
     lcd.write(setting_getParameterTmpValue());
   }
-    
-
+  
   lcd.setCursor(display_cursorX, display_cursorY);
 }
 
 /**
  * calculates the sequenceId underneath the display cursor
  */
-uint8_t display_calculateSeqId() { 
-  return display_seqRowOffset + display_seqPosY - 1;
+void display_calculateSeqId() { 
+  display_seqId = display_seqRowOffset + display_seqPosY - 1;
+}
+
+/**
+ * returns the cached id of the sequence underneath the display cursor
+ */
+uint8_t display_getSeqId() {
+  return display_seqId;
 }
 
 /**
  * calculates the sequence step underneath the display cursor
  */
 uint8_t display_calculateSeqStep() {
-  return display_seqColOffset[display_calculateSeqId()] + display_seqPosX - 2;
+  return display_seqColOffset[display_getSeqId()] + display_seqPosX - 2;
 }
 
 /**
@@ -214,7 +222,7 @@ void display_updateSequenceRow(uint32_t row) {
  * re-draws the sequence step underneath the cursor
  */
 void display_updateSequenceStep() {
-  uint8_t seqId   = display_calculateSeqId();
+  uint8_t seqId   = display_getSeqId();
   uint8_t seqStep = display_calculateSeqStep();
 
   display_updateSequenceStep(seqId, seqStep);
@@ -338,14 +346,14 @@ void display_moveCursorToSeq() {
 void display_moveCursorUp() {
   uint8_t newOffset = display_seqRowOffset;
 
-  if (display_cursorY == 0) {
-    // menu row
-    
-  } else {
+  if (display_cursorY != 0) {
+    // sequence row
     if (display_cursorY > 1) {
       // sequencer rows
       display_seqPosY = max(1, display_seqPosY - 1);
       display_cursorY = display_seqPosY;
+      
+      display_calculateSeqId();
       display_updateMenu();
         
     } else if (display_cursorY == 1) {
@@ -355,22 +363,22 @@ void display_moveCursorUp() {
       if (display_seqRowOffset != newOffset) {
         display_seqRowOffset = newOffset;
         
+        display_calculateSeqId();
         display_updateMenu();
         display_updateSequenceRow(0);
         display_updateSequenceRow(1);
         display_updateSequenceRow(2);
-        
       }
     }
 
     // make sure cursor isn't further right than sequence length
-    uint8_t seqId = display_calculateSeqId();
+    uint8_t seqId = display_getSeqId();
     uint8_t seqLen = sequencer_getLen(seqId);
     display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
     display_cursorX = display_seqPosX;
     
     lcd.setCursor(display_cursorX, display_cursorY);
-  }
+  } // do nothing for menu row
 
   #if DEBUG_DISPLAY
   display_positionDebug();
@@ -385,13 +393,14 @@ void display_moveCursorUp() {
 void display_moveCursorDown() {
   uint8_t newOffset = display_seqRowOffset;
   
-  if (display_cursorY == 0) {
-    // menu row
-  } else {
+  if (display_cursorY != 0) {
+    // sequence row
     if (display_cursorY < 3) {
       // sequencer rows
       display_seqPosY = min(3, display_seqPosY + 1);
       display_cursorY = display_seqPosY;
+      
+      display_calculateSeqId();
       display_updateMenu();
       
     } else if (display_cursorY == 3) {
@@ -399,8 +408,9 @@ void display_moveCursorDown() {
       
       if (display_seqRowOffset != newOffset) {
         display_seqRowOffset = newOffset;
+        
+        display_calculateSeqId();
         display_updateMenu();
-
         display_updateSequenceRow(0);
         display_updateSequenceRow(1);
         display_updateSequenceRow(2);
@@ -408,13 +418,14 @@ void display_moveCursorDown() {
     }
 
     // make sure cursor isn't further right than sequence length
-    uint8_t seqId = display_calculateSeqId();
+    display_calculateSeqId();
+    uint8_t seqId = display_getSeqId();
     uint8_t seqLen = sequencer_getLen(seqId);
     display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
     display_cursorX = display_seqPosX;
     
     lcd.setCursor(display_cursorX, display_cursorY);
-  }
+  } // do nothing for menu row
 
   #if DEBUG_DISPLAY
   display_positionDebug();
@@ -426,7 +437,7 @@ void display_moveCursorDown() {
  * movement, positive values indicate clockwise movement.
  */
 void display_encoderMove(int32_t delta) {
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
   uint8_t seqLen = sequencer_getLen(seqId);
   
   if (display_cursorY == 0) {
@@ -513,7 +524,7 @@ void display_encoderButtonPress() {
  * sequence rows go step by step but not all the way left/right
  */
 void display_moveCursorLeft() {
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
   
   if (display_cursorY == 0) {
     // menu row
@@ -566,7 +577,7 @@ void display_moveCursorLeft() {
  * sequence rows go step by step but not all the way left/right
  */
 void display_moveCursorRight() {
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
   uint8_t seqLen = sequencer_getLen(seqId);
   
   if (display_cursorY == 0) {
@@ -618,7 +629,7 @@ void display_moveCursorRight() {
 
 #if DEBUG_DISPLAY
 void display_positionDebug() {
-  uint8_t seqId = display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
   uint8_t seqLen = sequencer_getLen(seqId);
   Serial.println("--------------");
   Serial.print("offsets: "); Serial.print(display_seqColOffset[seqId]); Serial.print(" / "); Serial.println(display_seqRowOffset);
