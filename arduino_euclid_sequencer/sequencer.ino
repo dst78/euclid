@@ -49,6 +49,50 @@ uint32_t sequencer_maskInfoOff  = 0b00000000000000001111100000000000;
 uint32_t sequencer_maskInfoMNte = 0b00000000011111110000000000000000;
 
 /**
+ * call this in setup()
+ */
+void sequencer_init() {
+  uint32_t rythm;
+  
+  #if DEBUG_SEQUENCER
+  delay(5000);
+  Serial.println("Testing the Euclidian Rythms");
+
+  delay(1000);
+  rythm = euclid(8, 5, 0);
+  Serial.print("E8,5,0  : "); Serial.print(rythm, BIN);
+  Serial.println("");
+
+
+  delay(1000);
+  rythm = euclid(16, 10, 0);
+  Serial.print("E16,10,0: "); Serial.print(rythm, BIN);
+  Serial.println("");
+
+  delay(1000);
+  rythm = euclid(16, 14, 0);
+  Serial.print("E16,14,0: "); Serial.print(rythm, BIN);
+  Serial.println("");
+
+  delay(1000);
+  rythm = euclid(8, 5, 0);
+  Serial.print("E16,16,0: "); Serial.print(rythm, BIN);
+  Serial.println("");
+
+  delay(1000);
+  rythm = euclid(32, 16, 0);
+  Serial.print("E32,16,0: "); Serial.print(rythm, BIN);
+  Serial.println("");
+
+  delay(1000);
+  rythm = euclid(32, 24, 0);
+  Serial.print("E32,24,0: "); Serial.print(rythm, BIN);
+  Serial.println("");
+  
+  #endif
+}
+
+/**
  * returns a sequence as 32 bit number
  */
 uint32_t sequencer_getSeq(uint8_t seqId) {
@@ -171,4 +215,23 @@ bool sequencer_toggleSeqStep(uint8_t seqId, uint8_t seqStep) {
   }
 
   return returnValue;
+}
+
+/**
+ * returns the binary length of a number by counting bitwise
+ * 
+ * this is faster than calculating (uint8_t) log2(bnry) + 1
+ */
+uint8_t sequencer_findLength(uint32_t bnry) {
+  // no number can have a length of zero - single 0 has a length of one, but no 1s for the sytem to count
+  uint8_t length = 1;
+  
+  for (uint8_t q = 32; q >= 0; q--) {  
+    if (bitRead(bnry, q) == 1) {
+      length = q + 1;
+      break;
+    }
+  }
+  
+  return length;
 }
