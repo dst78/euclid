@@ -48,10 +48,11 @@ void setup() {
   Serial.begin(9600);
   #endif
 
-  display_init();
   clock_init();
+  sequencer_init();
   encoder_init();
   thumbstick_init();
+  display_init();  
 }
 
 void loop() {
