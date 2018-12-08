@@ -489,6 +489,26 @@ void display_encoderMove(int32_t delta) {
 }
 
 /**
+ * handles the encoder button press
+ */
+void display_encoderButtonPress() {
+  if (display_cursorY == 0) {
+    if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+      // menu parameter name was selected, move cursor to parameter value
+      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+      display_cursorX = display_menuPosX;
+      lcd.setCursor(display_cursorX, display_cursorY);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+      // menu parameter value needs to be stored
+      setting_persistParameterValue();
+      display_updateSequenceRow(display_seqPosY-1);
+      lcd.setCursor(display_cursorX, display_cursorY);
+    }  
+  }
+}
+
+/**
  * menu row jumps the cursor between predefined positions
  * sequence rows go step by step but not all the way left/right
  */

@@ -70,7 +70,6 @@ static const char *SETTING_PARAMETER_VALUE_SNLN[3] = {"/16", "1/8", "1/4"};
 
 uint8_t setting_parameterValue_Mchn    = 10;
 uint8_t setting_parameterValue_tmp     = setting_parameterValue_Mchn; // first parameter to show is Mchn so we're copying that value
-uint8_t setting_parameterValue_Mnte[8] = {36, 38, 42, 46, 37, 75, 48, 41};
 uint8_t setting_parameterValue_Mgte[8] = {50, 50, 50, 50, 50, 50, 50, 50};
 uint8_t setting_parameterValue_Mvel[8] = {100, 100, 100, 100, 100, 100, 100, 100};
 uint8_t setting_parameterValue_Spul[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -90,7 +89,8 @@ char setting_getClocksource() {
 }
 
 /**
- * toggles between clocksources
+ * toggles between clocksources, change is immediate
+ * @todo must trigger the appropriate function in the clock management
  */
 void setting_changeClocksource(int32_t delta) {
   if (setting_clocksource == SETTING_CLOCKSOURCE_CV) {
@@ -110,7 +110,8 @@ char* setting_getBPM() {
 }
 
 /**
- * changes the BPM up or down
+ * changes the BPM up or down, change is immediate
+ * @todo must update the timer interrupt for internal clock
  */
 void setting_changeBPM(int32_t delta) {
   setting_bpm = min(SETTING_BPM_MAX, max(SETTING_BPM_MIN, setting_bpm + delta));
@@ -126,7 +127,8 @@ char* setting_getSwing() {
 }
 
 /**
- * changes the swing setting up or down
+ * changes the swing setting up or down, change is immediate
+ * @todo swing must be handled
  */
 void setting_changeSwing(int32_t delta) {
   setting_swing = min(SETTING_SWING_MAX, max(SETTING_SWING_MIN, setting_swing + delta));
@@ -155,7 +157,7 @@ void setting_changeParameter(int32_t delta) {
     setting_parameterValue_tmp = setting_parameterValue_Mchn;
   } else if (setting_parameterIndex == 1) {
     // SETTING_PARAMETER_NAME_MNTE - sequence MIDI note
-    setting_parameterValue_tmp = setting_parameterValue_Mnte[seqId] - SETTING_PARAMETER_VALUE_MNTE_MIN;
+    setting_parameterValue_tmp = sequencer_getMidiNote(seqId) - SETTING_PARAMETER_VALUE_MNTE_MIN;
   } else if (setting_parameterIndex == 2) {
     // SETTING_PARAMETER_NAME_MGTE - sequence MIDI gate length
     setting_parameterValue_tmp = setting_parameterValue_Mgte[seqId];
@@ -198,7 +200,7 @@ char* setting_getParameterValue() {
     sprintf(returnValue, "%3d", setting_parameterValue_Mchn);
   } else if (setting_parameterIndex == 1) {
     // SETTING_PARAMETER_NAME_MNTE - sequence MIDI note
-    strcpy(returnValue, SETTING_PARAMETER_VALUE_MIDINOTES[setting_parameterValue_Mnte[seqId] - SETTING_PARAMETER_VALUE_MNTE_MIN]);
+    strcpy(returnValue, SETTING_PARAMETER_VALUE_MIDINOTES[sequencer_getMidiNote(seqId) - SETTING_PARAMETER_VALUE_MNTE_MIN]);
   } else if (setting_parameterIndex == 2) {
     // SETTING_PARAMETER_NAME_MGTE - sequence MIDI gate length
     sprintf(returnValue, "%3d", setting_parameterValue_Mgte[seqId]);
@@ -283,7 +285,7 @@ void setting_changeParameterValue(int32_t delta) {
     setting_parameterValue_tmp = 0;
     
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SROT - sequence offset - this is in the Euclidian Rythm sense
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
@@ -297,5 +299,48 @@ void setting_changeParameterValue(int32_t delta) {
   } else if (setting_parameterIndex == 10) {
     // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
     setting_parameterValue_tmp = min(100, max(0, setting_parameterValue_tmp + delta));   
+  }
+}
+
+/**
+ * this persistently stores the parameter value in the tmp variable
+ * to the actual storage, making the change effective.
+ */
+void setting_persistParameterValue() {
+  uint8_t seqId = display_calculateSeqId();
+  
+  if (setting_parameterIndex == 0) {
+    // SETTING_PARAMETER_NAME_MCHN - MIDI channel for the instrument
+    setting_parameterValue_Mchn = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 1) {
+    // SETTING_PARAMETER_NAME_MNTE - sequence MIDI note
+    sequencer_setMidiNote(seqId, setting_parameterValue_tmp + SETTING_PARAMETER_VALUE_MNTE_MIN);
+  } else if (setting_parameterIndex == 2) {
+    // SETTING_PARAMETER_NAME_MGTE - sequence MIDI gate length
+    setting_parameterValue_Mgte[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 3) {
+    // SETTING_PARAMETER_NAME_MVEL - sequence MIDI note velocity
+    setting_parameterValue_Mvel[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 4) {
+    // SETTING_PARAMETER_NAME_SLEN - sequence length
+    sequencer_setLen(seqId, setting_parameterValue_tmp);
+  } else if (setting_parameterIndex == 5) {
+    // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
+    setting_parameterValue_Spul[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 6) {
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
+    sequencer_setOffset(seqId, setting_parameterValue_tmp);
+  } else if (setting_parameterIndex == 7) {
+    // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
+    setting_parameterValue_Sdir[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 8) {
+    // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
+    setting_parameterValue_Snln[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 9) {
+    // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
+    setting_parameterValue_Srda[seqId] = setting_parameterValue_tmp;
+  } else if (setting_parameterIndex == 10) {
+    // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
+    setting_parameterValue_Srdc[seqId] = setting_parameterValue_tmp;
   }
 }
