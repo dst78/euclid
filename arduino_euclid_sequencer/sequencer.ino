@@ -12,8 +12,7 @@
  * - M - contains the information whether the sequence is muted (HI = muted)
  * - PPPPP - current sequence position 
  * - LLLLL - overall sequence length 
- * - OOO   - offset (up to 8)
- * - DD    - direction (00 = forward, 01 = backward, 10 = alternating)
+ * - OOOOO - offset (up to 8)
  */
 
 uint32_t sequencer_seqData[8] = {
@@ -29,11 +28,11 @@ uint32_t sequencer_seqData[8] = {
 
 // information about mute-state, position and length
 uint16_t sequencer_seqInfo[8] = {
-  0x0008,
-  0x0015,
-  0x0015,
-  0x0010,
-  0x0008,
+  0x0000,
+  0x0000,
+  0x0000,
+  0x0000,
+  0x0000,
   0x0000,
   0x0000,
   0x0000,
@@ -42,6 +41,7 @@ uint16_t sequencer_seqInfo[8] = {
 uint16_t sequencer_maskInfoMute = 0b0000010000000000;
 uint16_t sequencer_maskInfoPos  = 0b0000001111100000;
 uint16_t sequencer_maskInfoLen  = 0b0000000000011111;
+uint16_t sequencer_maskInfoOff  = 0b1111100000000000;
 
 /**
  * returns a sequence as 32 bit number
@@ -76,6 +76,13 @@ uint16_t sequencer_getLen(uint8_t seqId) {
  */
 uint16_t sequencer_getPos(uint8_t seqId) {
   return (sequencer_seqInfo[seqId] & sequencer_maskInfoPos) >> 5;
+}
+
+/**
+ * returns the sequence offset
+ */
+uint16_t sequencer_getOffset(uint8_t seqId) {
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoOff) >> 11;
 }
 
 /**

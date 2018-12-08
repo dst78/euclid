@@ -18,7 +18,7 @@ int8_t setting_swing = SETTING_SWING_MIN;
 #define SETTING_PARAMETER_NAME_MVEL "Mvel" // sequence note velocity
 #define SETTING_PARAMETER_NAME_SLEN "Slen" // sequence length
 #define SETTING_PARAMETER_NAME_SPUL "Spul" // active sequence pulses - this is in the Euclidian Rythm sense
-#define SETTING_PARAMETER_NAME_SROT "Srot" // sequence offset - this is in the Euclidian Rythm sense
+#define SETTING_PARAMETER_NAME_SOFF "Soff" // sequence offset - this is in the Euclidian Rythm sense
 #define SETTING_PARAMETER_NAME_SDIR "Sdir" // sequence play direction - forward, backward, alternating
 #define SETTING_PARAMETER_NAME_SNLN "Snln" // sequence note length - 16th, 8th, 4th
 #define SETTING_PARAMETER_NAME_SRDA "Srda" // sequence randomization amount
@@ -49,7 +49,7 @@ static const char *SETTING_PARAMETER_NAMES[] = {
   SETTING_PARAMETER_NAME_MVEL, // 3  - sequence MIDI note velocity
   SETTING_PARAMETER_NAME_SLEN, // 4  - sequence length
   SETTING_PARAMETER_NAME_SPUL, // 5  - active sequence pulses - this is in the Euclidian Rythm sense
-  SETTING_PARAMETER_NAME_SROT, // 6  - sequence offset - this is in the Euclidian Rythm sense
+  SETTING_PARAMETER_NAME_SOFF, // 6  - sequence offset - this is in the Euclidian Rythm sense
   SETTING_PARAMETER_NAME_SDIR, // 7  - sequence play direction - forward, backward, alternating
   SETTING_PARAMETER_NAME_SNLN, // 8  - sequence note length - 16th, 8th, 4th
   SETTING_PARAMETER_NAME_SRDA, // 9  - sequence randomization amount
@@ -73,9 +73,7 @@ uint8_t setting_parameterValue_tmp     = setting_parameterValue_Mchn; // first p
 uint8_t setting_parameterValue_Mnte[8] = {36, 38, 42, 46, 37, 75, 48, 41};
 uint8_t setting_parameterValue_Mgte[8] = {50, 50, 50, 50, 50, 50, 50, 50};
 uint8_t setting_parameterValue_Mvel[8] = {100, 100, 100, 100, 100, 100, 100, 100};
-uint8_t setting_parameterValue_Slen[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Spul[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-uint8_t setting_parameterValue_Srot[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Sdir[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Snln[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Srda[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -166,13 +164,13 @@ void setting_changeParameter(int32_t delta) {
     setting_parameterValue_tmp = setting_parameterValue_Mvel[seqId];
   } else if (setting_parameterIndex == 4) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
-    setting_parameterValue_tmp = setting_parameterValue_Slen[seqId];
+    setting_parameterValue_tmp = sequencer_getLen(seqId);
   } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = setting_parameterValue_Spul[seqId];
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SROT - sequence offset - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = setting_parameterValue_Srot[seqId];
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
+    setting_parameterValue_tmp = sequencer_getOffset(seqId);
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = setting_parameterValue_Sdir[seqId];
@@ -209,13 +207,13 @@ char* setting_getParameterValue() {
     sprintf(returnValue, "%3d", setting_parameterValue_Mvel[seqId]);
   } else if (setting_parameterIndex == 4) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
-    sprintf(returnValue, "%3d", setting_parameterValue_Slen[seqId]);
+    sprintf(returnValue, "%3d", sequencer_getLen(seqId));
   } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     sprintf(returnValue, "%3d", setting_parameterValue_Spul[seqId]);
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SROT - sequence offset - this is in the Euclidian Rythm sense
-    sprintf(returnValue, "%3d", setting_parameterValue_Srot[seqId]);
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
+    sprintf(returnValue, "%3d", sequencer_getOffset(seqId));
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SDIR[setting_parameterValue_Sdir[seqId]]);
@@ -286,8 +284,7 @@ void setting_changeParameterValue(int32_t delta) {
     
   } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SROT - sequence offset - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = 0;
-  
+    setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SDIR_MAX, max(SETTING_PARAMETER_VALUE_SDIR_MIN, setting_parameterValue_tmp + delta));
