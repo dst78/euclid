@@ -240,18 +240,10 @@ void display_updateSequenceStep() {
     Serial.print(".");
   }
   Serial.println("");
-  
-  for (int i = 0; i < 32; i++) {
-    if ((seq & (1 << (31-i))) == (uint32_t) (1 << (31-i))) {
-      // active step
-      Serial.print("X");
-      
-    } else {
-      // inactive step
-      Serial.print("_");
-    }
-  }
-  Serial.println("");
+
+  #if DEBUG_SEQUENCER
+  sequence_debug(seq);
+  #endif
   #endif  
 }
 

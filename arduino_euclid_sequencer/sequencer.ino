@@ -26,77 +26,38 @@ uint32_t sequencer_seqData[8] = {
  * - M - contains the information whether the sequence is muted (HI = muted)
  * - L - overall sequence length, 6-bit for up to 32 steps (technically we could store 0-63 but that makes no sense)
  * - P - current sequence position, 0-31, 5-bit 
- * - O - play offset, 0-31, 5-bit
  * - N - MIDI note (this is an indirect index. the actual note will be offset by the amount of SETTING_PARAMETER_VALUE_MNTE_MIN)
 
  */
 uint32_t sequencer_seqInfo[8] = {
-//  M........NNNNNNNOOOOOPPPPPLLLLLL
-  0b00000000001001000000000000001000,
-  0b00000000001001100000000000000000,
-  0b00000000001010100000000000000000,
-  0b00000000001011100000000000000000,
-  0b00000000001001010000000000000000,
-  0b00000000010010110000000000000000,
-  0b00000000001100000000000000000000,
-  0b00000000001010010000000000000000,
+//  M.............NNNNNNNPPPPPLLLLLL
+  0b00000000000000010010000000001000,
+  0b00000000000000010011000000000000,
+  0b00000000000000010101000000000000,
+  0b00000000000000010111000000000000,
+  0b00000000000000010010100000000000,
+  0b00000000000000100101100000000000,
+  0b00000000000000011000000000000000,
+  0b00000000000000010100100000000000,
 };
-//                                  M........NNNNNNNOOOOOPPPPPLLLLLL
+//                                  M.............NNNNNNNPPPPPLLLLLL
 uint32_t sequencer_maskInfoMute = 0b10000000000000000000000000000000;
 uint32_t sequencer_maskInfoLen  = 0b00000000000000000000000000111111;
 uint32_t sequencer_maskInfoPos  = 0b00000000000000000000011111000000;
-uint32_t sequencer_maskInfoOff  = 0b00000000000000001111100000000000;
-uint32_t sequencer_maskInfoMNte = 0b00000000011111110000000000000000;
-
-/**
- * call this in setup()
- */
-void sequencer_init() {
-  uint32_t rythm;
-  
-  #if DEBUG_SEQUENCER
-  delay(5000);
-  Serial.println("Testing the Euclidian Rythms");
-
-  delay(1000);
-  rythm = euclid(8, 5, 0);
-  Serial.print("E8,5,0  : "); Serial.print(rythm, BIN);
-  Serial.println("");
-
-
-  delay(1000);
-  rythm = euclid(16, 10, 0);
-  Serial.print("E16,10,0: "); Serial.print(rythm, BIN);
-  Serial.println("");
-
-  delay(1000);
-  rythm = euclid(16, 14, 0);
-  Serial.print("E16,14,0: "); Serial.print(rythm, BIN);
-  Serial.println("");
-
-  delay(1000);
-  rythm = euclid(8, 5, 0);
-  Serial.print("E16,16,0: "); Serial.print(rythm, BIN);
-  Serial.println("");
-
-  delay(1000);
-  rythm = euclid(32, 16, 0);
-  Serial.print("E32,16,0: "); Serial.print(rythm, BIN);
-  Serial.println("");
-
-  delay(1000);
-  rythm = euclid(32, 24, 0);
-  Serial.print("E32,24,0: "); Serial.print(rythm, BIN);
-  Serial.println("");
-  
-  #endif
-}
+uint32_t sequencer_maskInfoMNte = 0b00000000000000111111100000000000;
 
 /**
  * returns a sequence as 32 bit number
  */
 uint32_t sequencer_getSeq(uint8_t seqId) {
   return sequencer_seqData[seqId];
+}
+
+/**
+ * stores a complete sequence
+ */
+void sequencer_setSeq(uint8_t seqId, uint32_t seq) {
+  sequencer_seqData[seqId] = seq;
 }
 
 /**
@@ -146,49 +107,42 @@ void sequencer_setPos(uint8_t seqId, uint8_t seqPos) {
 }
 
 /**
- * returns the sequence offset
- * return value will never be larger than 32
- */
-uint8_t sequencer_getOffset(uint8_t seqId) {
-  return (sequencer_seqInfo[seqId] & sequencer_maskInfoOff) >> 11;
-}
-
-/**
  * updates the sequence offset
  * only the lowest 6 bits will be taken into account
  */
-void sequencer_setOffset(uint8_t seqId, uint8_t seqOff) {
-  int8_t diffOffset = seqOff - sequencer_getOffset(seqId); // amount of bits to shift
+void sequencer_applyOffset(uint8_t seqId, int8_t seqOff) {
   uint8_t seqLen    = sequencer_getLen(seqId);
-  
-  // persist new offset
-  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoOff) | ((seqOff << 11) & sequencer_maskInfoOff);
-  
   // rotating bitshift sequence 
-  // @todo need to AND with LO-bits beyond the sequence length
-  if (diffOffset > 0) {
-    //                          right-shift leading bits                   wrap lower bits around to become high bits             apply a mask to zero-out overhang beyond sequence length 
-    sequencer_seqData[seqId] = ((sequencer_seqData[seqId] >> diffOffset) | (sequencer_seqData[seqId] << (seqLen - diffOffset))) & (0xFFFF << (32 - seqLen));
+  sequencer_seqData[seqId] = sequencer_rotate(sequencer_seqData[seqId], seqLen, seqOff);
+}
+
+/**
+ * rotates the given pattern, taking into account the actual length
+ */
+uint32_t sequencer_rotate(uint32_t pattern, uint8_t len, int8_t rotation) {
+  if (rotation > 0) {
+    pattern = ((pattern >> rotation) | (pattern << (len - rotation))) & (0xFFFFFFFF << (32 - len));
     
-  } else if (diffOffset < 0) {
-    diffOffset *= -1;
-    //                          right-shift leading bits                   wrap lower bits around to become high bits             apply a mask to zero-out overhang beyond sequence length 
-    sequencer_seqData[seqId] = ((sequencer_seqData[seqId] << diffOffset) | (sequencer_seqData[seqId] >> (seqLen - diffOffset))) & (0xFFFF << (32 - seqLen));
+  } else if (rotation < 0) {
+    rotation *= -1;
+    pattern = ((pattern << rotation) | (pattern >> (len - rotation))) & (0xFFFFFFFF << (32 - len));
   }
+
+  return pattern;
 }
 
 /**
  * returns the indirect MIDI note index
  */
 uint8_t sequencer_getMidiNote(uint8_t seqId) {
-  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMNte) >> 16;
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMNte) >> 11;
 }
 
 /**
  * updates the indirect MIDI note index
  */
 void sequencer_setMidiNote(uint8_t seqId, uint8_t mnte) {
-  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMNte) | ((mnte << 16) & sequencer_maskInfoMNte);
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMNte) | ((mnte << 11) & sequencer_maskInfoMNte);
 }
 
 /**
@@ -235,3 +189,21 @@ uint8_t sequencer_findLength(uint32_t bnry) {
   
   return length;
 }
+
+
+#if DEBUG_SEQUENCER
+void sequence_debug(uint32_t seq) {
+  for (uint8_t i = 0; i < 32; i++) {
+    if ((seq & (1 << (31-i))) == (uint32_t) (1 << (31-i))) {
+      // active step
+      Serial.print("X");
+      
+    } else {
+      // inactive step
+      Serial.print("_");
+    }
+  }
+
+  Serial.println();
+}
+#endif

@@ -69,7 +69,7 @@ static const char *SETTING_PARAMETER_VALUE_SDIR[3] = {"Fwd", "Bck", "Alt"};
 static const char *SETTING_PARAMETER_VALUE_SNLN[3] = {"/16", "1/8", "1/4"};
 
 uint8_t setting_parameterValue_Mchn    = 10;
-uint8_t setting_parameterValue_tmp     = setting_parameterValue_Mchn; // first parameter to show is Mchn so we're copying that value
+int8_t setting_parameterValue_tmp     = setting_parameterValue_Mchn; // first parameter to show is Mchn so we're copying that value
 uint8_t setting_parameterValue_Mgte[8] = {50, 50, 50, 50, 50, 50, 50, 50};
 uint8_t setting_parameterValue_Mvel[8] = {100, 100, 100, 100, 100, 100, 100, 100};
 uint8_t setting_parameterValue_Spul[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -181,8 +181,8 @@ void setting_changeParameter(int32_t delta) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = setting_parameterValue_Spul[seqId];
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = sequencer_getOffset(seqId);
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset
+    setting_parameterValue_tmp = 0;
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = setting_parameterValue_Sdir[seqId];
@@ -224,8 +224,8 @@ char* setting_getParameterValue() {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     sprintf(returnValue, "%3d", setting_parameterValue_Spul[seqId]);
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
-    sprintf(returnValue, "%3d", sequencer_getOffset(seqId));
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset
+    sprintf(returnValue, "%3d", 0);
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SDIR[setting_parameterValue_Sdir[seqId]]);
@@ -297,7 +297,8 @@ void setting_changeParameterValue(int32_t delta) {
     setting_parameterValue_tmp = min(sequencer_getLen(seqId), max(0, setting_parameterValue_tmp + delta));    
   } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
-    setting_parameterValue_tmp = min(sequencer_getLen(seqId) - 1, max(0, setting_parameterValue_tmp + delta));
+    uint8_t offsetWidth = sequencer_getLen(seqId) - 1;
+    setting_parameterValue_tmp = min(offsetWidth, max(-1 * offsetWidth, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SDIR_MAX, max(SETTING_PARAMETER_VALUE_SDIR_MIN, setting_parameterValue_tmp + delta));
@@ -336,12 +337,13 @@ void setting_persistParameterValue() {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
     sequencer_setLen(seqId, setting_parameterValue_tmp);
   } else if (setting_parameterIndex == 5) {
-    // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
+    // SETTING_PARAMETER_NAME_SPUL - active sequence pulses 
+    // persisting this will overwrite the existing pattern with an Euclidian Rythm 
     setting_parameterValue_Spul[seqId] = setting_parameterValue_tmp;
-    // @todo calculate new Euclidian Rythm when this is persisted
+    sequencer_setSeq(seqId, euclid(sequencer_getLen(seqId), setting_parameterValue_Spul[seqId], 0));
   } else if (setting_parameterIndex == 6) {
-    // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
-    sequencer_setOffset(seqId, setting_parameterValue_tmp);
+    // SETTING_PARAMETER_NAME_SOFF - sequence offset
+    sequencer_applyOffset(seqId, setting_parameterValue_tmp);
   } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_Sdir[seqId] = setting_parameterValue_tmp;

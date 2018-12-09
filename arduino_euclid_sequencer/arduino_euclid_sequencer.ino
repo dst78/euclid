@@ -49,7 +49,6 @@ void setup() {
   #endif
 
   clock_init();
-  sequencer_init();
   encoder_init();
   thumbstick_init();
   display_init();  
