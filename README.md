@@ -82,17 +82,16 @@ drum sequencer based on a Teensy 3.6
       - moves the cursor between sequence rows
       - scrolls the sequences in the display if the cursor is in first/last visible row
     - left/right 
-      - moves the cursor one step backward/forward in the current sequence row
-      - scrolls the visible section of long sequences if cursor is in leftmost/rightmost position
+      - jumps back to menu row and moves between menu items
     - pushbutton
       - moves to setting editing
   - setting editing:
     - left/right
       - moves cursor between clock source, BPM, swing, mode, mode value
     - up/down
-      - moves between sub-menu options if available
+      - makes the previous / next sequence row active for editing
     - pushbutton
-      - moves to grid editing
+      - moves to grid editing without changing the active sequence
 
 ### rotary encoder with pushbutton
   - grid editing:

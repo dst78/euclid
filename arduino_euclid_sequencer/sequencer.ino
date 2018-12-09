@@ -117,8 +117,10 @@ void sequencer_setPos(uint8_t seqId, uint8_t seqPos) {
 
 /**
  * increases the position of the sequencer by one (wrapping around)
+ * 
+ * returns the new position
  */
-void sequencer_incPos(uint8_t seqId) {
+uint8_t sequencer_incPos(uint8_t seqId) {
   uint8_t seqPos = sequencer_getPos(seqId) + 1;
   
   if (seqPos == sequencer_getLen(seqId)) {
@@ -126,20 +128,32 @@ void sequencer_incPos(uint8_t seqId) {
   }
   
   sequencer_setPos(seqId, seqPos);
+
+  return seqPos;
 }
 
+/**
+ * takes a time increment from the clock and
+ * advances every sequence if needed. also triggers MIDI notes / samples.
+ */
 void sequencer_handlePositionIncrement(uint8_t increment) {
   uint8_t snln; // sequence note length
-  uint8_t seqPos; 
+  uint8_t seqPos, oldPos; 
   
   for (uint8_t seqId = 0; seqId < 8; seqId++) {
 
-    if (!sequencer_isMuted(seqId)) {
+    if (!sequencer_isMuted(seqId)
+        && sequencer_getLen(seqId) > 0) {
       snln = sequencer_getNoteLen(seqId);
     
       if (increment == snln) {
-        sequencer_incPos(seqId);
-        seqPos = sequencer_getPos(seqId);
+        oldPos = sequencer_getPos(seqId);
+        seqPos = sequencer_incPos(seqId);
+
+        if (oldPos != seqPos) {
+          // on alternating direction the first and last step is triggered twice so the cursor doesn't always move
+          //display_updateSequenceCurrentPosition(seqId, oldPos, seqPos);
+        }
         
         if (sequencer_getStep(seqId, seqPos)) {
           midi_sendNoteOn(seqId);

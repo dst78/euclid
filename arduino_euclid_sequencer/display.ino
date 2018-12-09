@@ -260,9 +260,13 @@ void display_updateSequenceStep(uint8_t seqId, uint8_t seqStep) {
   // only update the LCD when coordinates are visible
   if (displayRow >= 1 && displayRow < 4
     && displayCol >= 2 && displayCol < 18) {
-      #if DEBUG_DISPLAY
-      Serial.println("character is visible");
-      #endif
+      
+    #if DEBUG_DISPLAY
+    Serial.println("character is visible");
+    #endif
+      
+    lcd.setCursor(displayCol, displayRow);
+    
     if ((seq & (1 << (31-seqStep))) == (uint32_t) (1 << (31-seqStep))) {
       if (seqStep == seqPos) {
         // current step, active
@@ -286,6 +290,17 @@ void display_updateSequenceStep(uint8_t seqId, uint8_t seqStep) {
     // put the cursor back on the same step
     lcd.setCursor(display_cursorX, display_cursorY);
   }
+}
+
+/**
+ * if visible, moves the current position cursor of a sequence
+ */
+void display_updateSequenceCurrentPosition(uint8_t seqId, uint8_t oldPos, uint8_t newPos) {
+  #if DEBUG_SEQUENCER
+  Serial.print("updating moving position for sequence "); Serial.println(seqId);
+  #endif
+  display_updateSequenceStep(seqId, oldPos);
+  display_updateSequenceStep(seqId, newPos);
 }
 
 /**
@@ -331,46 +346,41 @@ void display_moveCursorToSeq() {
 }
 
 /**
- * moves the cursor up one notch
- * 
- * what this implies differs in sequence editing and menu mode
+ * moves to the previous sequence row
  */
 void display_moveCursorUp() {
   uint8_t newOffset = display_seqRowOffset;
 
-  if (display_cursorY != 0) {
-    // sequence row
-    if (display_cursorY > 1) {
-      // sequencer rows
-      display_seqPosY = max(1, display_seqPosY - 1);
-      display_cursorY = display_seqPosY;
+  // sequence row
+  if (display_seqPosY > 1) {
+    // sequencer rows
+    display_seqPosY = max(1, display_seqPosY - 1);
+    
+    display_calculateSeqId();
+    display_updateMenu();
+      
+  } else if (display_seqPosY == 1) {
+    newOffset = max(0, display_seqRowOffset - 1);
+      
+    if (display_seqRowOffset != newOffset) {
+      display_seqRowOffset = newOffset;
       
       display_calculateSeqId();
       display_updateMenu();
-        
-    } else if (display_cursorY == 1) {
-      // seqRowOffset is zero-based, display_seqPosY starts at 1 so there is no "-1" calculation
-      newOffset = max(0, display_seqRowOffset - 1);
-        
-      if (display_seqRowOffset != newOffset) {
-        display_seqRowOffset = newOffset;
-        
-        display_calculateSeqId();
-        display_updateMenu();
-        display_updateSequenceRow(0);
-        display_updateSequenceRow(1);
-        display_updateSequenceRow(2);
-      }
+      display_updateSequenceRow(0);
+      display_updateSequenceRow(1);
+      display_updateSequenceRow(2);
     }
+  }
 
-    // make sure cursor isn't further right than sequence length
-    uint8_t seqId = display_getSeqId();
-    uint8_t seqLen = sequencer_getLen(seqId);
-    display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
-    display_cursorX = display_seqPosX;
-    
-    lcd.setCursor(display_cursorX, display_cursorY);
-  } // do nothing for menu row
+  // make sure cursor isn't further right than sequence length
+  uint8_t seqId = display_getSeqId();
+  uint8_t seqLen = sequencer_getLen(seqId);
+  display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
+  display_cursorX = display_seqPosX;
+  display_cursorY = display_seqPosY;
+  
+  lcd.setCursor(display_cursorX, display_cursorY);
 
   #if DEBUG_DISPLAY
   display_positionDebug();
@@ -378,46 +388,42 @@ void display_moveCursorUp() {
 }
 
 /**
- * moves the cursor down one notch
- * 
- * what this implies differs in sequence editing and menu mode
+ * moves to the next lowest sequence row
  */
 void display_moveCursorDown() {
   uint8_t newOffset = display_seqRowOffset;
-  
-  if (display_cursorY != 0) {
-    // sequence row
-    if (display_cursorY < 3) {
-      // sequencer rows
-      display_seqPosY = min(3, display_seqPosY + 1);
-      display_cursorY = display_seqPosY;
+
+  // sequence row
+  if (display_seqPosY < 3) {
+    // sequencer rows
+    display_seqPosY = min(3, display_seqPosY + 1);
+    
+    display_calculateSeqId();
+    display_updateMenu();
+    
+  } else if (display_seqPosY == 3) {
+    newOffset = min(5, display_seqRowOffset+1);
+    
+    if (display_seqRowOffset != newOffset) {
+      display_seqRowOffset = newOffset;
       
       display_calculateSeqId();
       display_updateMenu();
-      
-    } else if (display_cursorY == 3) {
-      newOffset = min(5, display_seqRowOffset+1);
-      
-      if (display_seqRowOffset != newOffset) {
-        display_seqRowOffset = newOffset;
-        
-        display_calculateSeqId();
-        display_updateMenu();
-        display_updateSequenceRow(0);
-        display_updateSequenceRow(1);
-        display_updateSequenceRow(2);
-      }
+      display_updateSequenceRow(0);
+      display_updateSequenceRow(1);
+      display_updateSequenceRow(2);
     }
+  }
 
-    // make sure cursor isn't further right than sequence length
-    display_calculateSeqId();
-    uint8_t seqId = display_getSeqId();
-    uint8_t seqLen = sequencer_getLen(seqId);
-    display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
-    display_cursorX = display_seqPosX;
-    
-    lcd.setCursor(display_cursorX, display_cursorY);
-  } // do nothing for menu row
+  // make sure cursor isn't further right than sequence length
+  display_calculateSeqId();
+  uint8_t seqId = display_getSeqId();
+  uint8_t seqLen = sequencer_getLen(seqId);
+  display_seqPosX = max(2, min(min(1+seqLen, 17), display_seqPosX));
+  display_cursorX = display_seqPosX;
+  display_cursorY = display_seqPosY;
+  
+  lcd.setCursor(display_cursorX, display_cursorY);
 
   #if DEBUG_DISPLAY
   display_positionDebug();
@@ -519,51 +525,34 @@ void display_encoderButtonPress() {
 }
 
 /**
- * menu row jumps the cursor between predefined positions
- * sequence rows go step by step but not all the way left/right
+ * jumps the cursor between predefined positions in the menu row
  */
-void display_moveCursorLeft() {
-  uint8_t seqId = display_getSeqId();
+void display_moveCursorLeft() {  
+  // menu row
+  display_cursorY = display_menuPosY;
   
-  if (display_cursorY == 0) {
-    // menu row
-    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
-      // currently at clock source, wrap around
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
-      // currently at BPM
+  if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    // currently at clock source, wrap around
+    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+    // currently at BPM
+    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+    // currently at swing value
+    if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
       display_menuPosX = DISPLAY_MENUPOS_CLOCK;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
-      // currently at swing value
-      if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
-        display_menuPosX = DISPLAY_MENUPOS_CLOCK;
-      } else {
-        display_menuPosX = DISPLAY_MENUPOS_BPM;
-      }
-      
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
-      // currently at parameter
-      display_menuPosX = DISPLAY_MENUPOS_SWING;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
-      // currently at parameter value
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
-    }
-    display_cursorX = display_menuPosX;
-    
-  } else {
-    // sequence row
-    if (display_seqPosX == 2
-        && display_seqColOffset[seqId] > 0) {
-      // can scroll left
-      display_seqColOffset[seqId]--;
-      display_updateSequenceRow(display_cursorY-1);
-      
     } else {
-      display_seqPosX = max(2, display_seqPosX-1);
-      display_cursorX = display_seqPosX;
+      display_menuPosX = DISPLAY_MENUPOS_BPM;
     }
+    
+  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    // currently at parameter
+    display_menuPosX = DISPLAY_MENUPOS_SWING;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    // currently at parameter value
+    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
   }
-  
+  display_cursorX = display_menuPosX;
   lcd.setCursor(display_cursorX, display_cursorY);
 
   #if DEBUG_DISPLAY
@@ -572,53 +561,34 @@ void display_moveCursorLeft() {
 }
 
 /**
- * menu row jumps the cursor between predefined positions
- * sequence rows go step by step but not all the way left/right
+ * jumps the cursor between predefined positions in the menu row
  */
-void display_moveCursorRight() {
-  uint8_t seqId = display_getSeqId();
-  uint8_t seqLen = sequencer_getLen(seqId);
+void display_moveCursorRight() {  
+  // menu row
+  display_cursorY = display_menuPosY;
   
-  if (display_cursorY == 0) {
-    // menu row
-    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
-      // currently at clock source
-      if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
-        display_menuPosX = DISPLAY_MENUPOS_SWING; 
-      } else {
-        display_menuPosX = DISPLAY_MENUPOS_BPM;
-      }
-    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
-      // currently at BPM
-      display_menuPosX = DISPLAY_MENUPOS_SWING;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
-      // currently at swing value
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
-      // currently at parameter
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
-      // currently at parameter value, wrap around
-      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
-    }
-    
-    display_cursorX = display_menuPosX;
-    
-  } else {
-    // sequencer row
-    if (display_seqPosX == 17 
-      && seqLen - display_seqColOffset[seqId] > 16) {
-      // can scroll right
-      display_seqColOffset[seqId]++;
-      display_updateSequenceRow(display_seqPosY-1);      
-      
+  if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    // currently at clock source
+    if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
+      display_menuPosX = DISPLAY_MENUPOS_SWING; 
     } else {
-      // move cursor right
-      display_seqPosX = min(min(1+seqLen, 17), display_seqPosX+1);
-      display_cursorX = display_seqPosX;
+      display_menuPosX = DISPLAY_MENUPOS_BPM;
     }
+  } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+    // currently at BPM
+    display_menuPosX = DISPLAY_MENUPOS_SWING;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+    // currently at swing value
+    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    // currently at parameter
+    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    // currently at parameter value, wrap around
+    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
   }
   
+  display_cursorX = display_menuPosX;
   lcd.setCursor(display_cursorX, display_cursorY);
 
   #if DEBUG_DISPLAY
