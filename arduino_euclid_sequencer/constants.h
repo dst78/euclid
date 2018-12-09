@@ -4,7 +4,7 @@
  * constants which signify pin assignments etc are defined within the script 
  * that cares and won't be accessed across scripts
  */
-#define VERSION "0.4.0"
+#define VERSION "0.5.0"
 
 // related to the LCD display
 #define DISPLAY_EDITMODE_MENU 'm'
@@ -27,3 +27,12 @@
 
 #define SETTING_CLOCKSOURCE_CV       'C'
 #define SETTING_CLOCKSOURCE_INTERNAL 'I'
+
+#define CLOCK_TIMER_RESOLUTION 24
+
+#define CLOCK_INCREMENT_QUARTERS 24
+#define CLOCK_INCREMENT_QUARTER_TRIPLETS 16
+#define CLOCK_INCREMENT_EIGHTHS 12
+#define CLOCK_INCREMENT_EIGHTH_TRIPLETS 8
+#define CLOCK_INCREMENT_SIXTEENTHS 6
+#define CLOCK_INCREMENT_SIXTEENTH_TRIPLETS 4

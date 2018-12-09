@@ -16,11 +16,11 @@ drum sequencer based on a Teensy 3.6
   - (DONE) defined by euclidian rythm
   - (DONE) setting a new euclidian rythm clears "overlap" if previous sequence was longer
   - (DONE) individual steps can be toggled as well (traditional sequencing)
-- sequence offset can be set
-- whole sequence can be muted without clearing
+- (DONE) sequence offset can be set
+- (DONE) whole sequence can be muted without clearing
 - sequence step direction: forward, backward, alternating
-- sequence speed: 1/16, 1/8, 1/4, triplets on/off
-- (DONE) selectable gate length per sequence
+- (DONE) sequence speed: 1/16, 1/16 triplets, 1/8, 1/8 triplets 1/4, 1/4 triplets
+- selectable gate length per sequence
 - (DONE) selectable velocity per sequence
 - (DONEselectable MIDI note per sequence
 - randomization
@@ -38,7 +38,7 @@ drum sequencer based on a Teensy 3.6
     - high tom        T
     - low tom         t
     - percussion(s)   ...
-- pattern editing, live editing modes
+- (DONE) pattern editing, live editing modes
 - live triggering (playing a step once without changing the stored pattern)
     
 ## Details on the display

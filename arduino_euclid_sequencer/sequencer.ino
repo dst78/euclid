@@ -27,24 +27,26 @@ uint32_t sequencer_seqData[8] = {
  * - L - overall sequence length, 6-bit for up to 32 steps (technically we could store 0-63 but that makes no sense)
  * - P - current sequence position, 0-31, 5-bit 
  * - N - MIDI note (this is an indirect index. the actual note will be offset by the amount of SETTING_PARAMETER_VALUE_MNTE_MIN)
-
+ * - O - MIDI note length: (the numbers reflect the clock incrememnts)
+ *       see the CLOCK_INCREMENT_* constants for actual values
  */
 uint32_t sequencer_seqInfo[8] = {
-//  M.............NNNNNNNPPPPPLLLLLL
-  0b00000000000000010010000000001000,
-  0b00000000000000010011000000000000,
-  0b00000000000000010101000000000000,
-  0b00000000000000010111000000000000,
-  0b00000000000000010010100000000000,
-  0b00000000000000100101100000000000,
-  0b00000000000000011000000000000000,
-  0b00000000000000010100100000000000,
+//  M........OOOOONNNNNNNPPPPPLLLLLL
+  0b00000000000110010010000000001000,
+  0b00000000000110010011000000000000,
+  0b00000000000110010101000000000000,
+  0b00000000000110010111000000000000,
+  0b00000000000110010010100000000000,
+  0b00000000000110100101100000000000,
+  0b00000000000110011000000000000000,
+  0b00000000000110010100100000000000,
 };
-//                                  M.............NNNNNNNPPPPPLLLLLL
+//                                  M........OOOOONNNNNNNPPPPPLLLLLL
 uint32_t sequencer_maskInfoMute = 0b10000000000000000000000000000000;
 uint32_t sequencer_maskInfoLen  = 0b00000000000000000000000000111111;
 uint32_t sequencer_maskInfoPos  = 0b00000000000000000000011111000000;
-uint32_t sequencer_maskInfoMNte = 0b00000000000000111111100000000000;
+uint32_t sequencer_maskInfoMnte = 0b00000000000000111111100000000000;
+uint32_t sequencer_maskInfoSnln = 0b00000000011111000000000000000000;
 
 /**
  * returns a sequence as 32 bit number
@@ -61,6 +63,13 @@ void sequencer_setSeq(uint8_t seqId, uint32_t seq) {
 }
 
 /**
+ * returns true if the sequence hits a pulse at the given position, false otherwise.
+ */
+boolean sequencer_getStep(uint8_t seqId, uint8_t seqPos) {
+  return (sequencer_seqData[seqId] & (1 << (31 - seqPos)));
+}
+
+/**
  * toggles the mute status of a sequence.
  */
 void sequencer_muteToggleSeq(uint8_t seqId) {
@@ -70,7 +79,7 @@ void sequencer_muteToggleSeq(uint8_t seqId) {
 /**
  * returns true if the current sequence is muted
  */
-boolean sequencer_getMuteStatus(uint8_t seqId) {
+boolean sequencer_isMuted(uint8_t seqId) {
   return ((sequencer_seqInfo[seqId] & sequencer_maskInfoMute) == sequencer_maskInfoMute);
 }
 
@@ -107,6 +116,49 @@ void sequencer_setPos(uint8_t seqId, uint8_t seqPos) {
 }
 
 /**
+ * increases the position of the sequencer by one (wrapping around)
+ */
+void sequencer_incPos(uint8_t seqId) {
+  uint8_t seqPos = sequencer_getPos(seqId) + 1;
+  
+  if (seqPos == sequencer_getLen(seqId)) {
+    seqPos = 0;
+  }
+  
+  sequencer_setPos(seqId, seqPos);
+}
+
+void sequencer_handlePositionIncrement(uint8_t increment) {
+  uint8_t snln; // sequence note length
+  uint8_t seqPos; 
+  
+  for (uint8_t seqId = 0; seqId < 8; seqId++) {
+
+    if (!sequencer_isMuted(seqId)) {
+      snln = sequencer_getNoteLen(seqId);
+    
+      if (increment == snln) {
+        sequencer_incPos(seqId);
+        seqPos = sequencer_getPos(seqId);
+        
+        if (sequencer_getStep(seqId, seqPos)) {
+          midi_sendNoteOn(seqId);
+        }
+        
+      } else if (increment >= snln / 2) {
+        seqPos = sequencer_getPos(seqId);
+  
+        if (sequencer_getStep(seqId, seqPos)) {
+          // switch note off again after half the interval
+          // @todo replace this with proper gate calculation
+          midi_sendNoteOff(seqId);
+        }
+      }
+    }
+  }
+}
+
+/**
  * updates the sequence offset
  * only the lowest 6 bits will be taken into account
  */
@@ -135,14 +187,28 @@ uint32_t sequencer_rotate(uint32_t pattern, uint8_t len, int8_t rotation) {
  * returns the indirect MIDI note index
  */
 uint8_t sequencer_getMidiNote(uint8_t seqId) {
-  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMNte) >> 11;
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoMnte) >> 11;
 }
 
 /**
  * updates the indirect MIDI note index
  */
 void sequencer_setMidiNote(uint8_t seqId, uint8_t mnte) {
-  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMNte) | ((mnte << 11) & sequencer_maskInfoMNte);
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoMnte) | ((mnte << 11) & sequencer_maskInfoMnte);
+}
+
+/**
+ * returns the MIDI note len for the given sequence
+ */
+uint8_t sequencer_getNoteLen(uint8_t seqId) {
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoSnln) >> 18;
+}
+
+/**
+ * updates the sequence with the given MIDI note length
+ */
+void sequencer_setNoteLen(uint8_t seqId, uint8_t clockIntervals) {
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoSnln) | ((clockIntervals << 18) & sequencer_maskInfoSnln);
 }
 
 /**

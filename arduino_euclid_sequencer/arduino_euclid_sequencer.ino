@@ -39,6 +39,7 @@
 #define DEBUG_DISPLAY true
 #define DEBUG_ENCODER true
 #define DEBUG_SEQUENCER true
+#define DEBUG_MIDI true
 #define DEBUG_THUMBSTICK true
 #define DEBUG_SETTING true
 
@@ -49,6 +50,7 @@ void setup() {
   #endif
 
   clock_init();
+  midi_init();
   encoder_init();
   thumbstick_init();
   display_init();  

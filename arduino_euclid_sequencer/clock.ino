@@ -5,10 +5,11 @@
  * 12 times the BPM value, in order to play 16th note triplets
  */
 
+#include "constants.h"
+
 IntervalTimer clock_internal;
   
 #define CLOCK_LED_PIN 13
-#define CLOCK_TIMER_RESOLUTION 24
 
 // timer interval in ms
 float clock_interval;
@@ -73,26 +74,33 @@ void clock_timerCallback() {
     // quarter note
     clock_ticks = 0;
     digitalWrite(CLOCK_LED_PIN, HIGH);
+
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_QUARTERS);
   }
 
   if (clock_ticks % ((CLOCK_TIMER_RESOLUTION * 2) / 3) == 0) {
     // quarter note triplets
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_QUARTER_TRIPLETS);
   }
   
   if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 2) == 0) {
     // eighth note
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_EIGHTHS);
   }
 
   if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 3) == 0) {
     // eighth note triplets
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_EIGHTH_TRIPLETS);
   }
   
   if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 4) == 0) {
     // sixteenth note 
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_SIXTEENTHS);
   }
 
   if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 6) == 0) {
     // sixteenth note triplets
+    sequencer_handlePositionIncrement(CLOCK_INCREMENT_SIXTEENTH_TRIPLETS);
   }
   
   if (clock_ticks == 2) {

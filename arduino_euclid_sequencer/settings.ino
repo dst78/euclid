@@ -37,7 +37,7 @@ int8_t setting_swing = SETTING_SWING_MIN;
 #define SETTING_PARAMETER_VALUE_SDIR_MAX 2
 
 #define SETTING_PARAMETER_VALUE_SNLN_MIN 0
-#define SETTING_PARAMETER_VALUE_SNLN_MAX 2
+#define SETTING_PARAMETER_VALUE_SNLN_MAX 5
 
 
 uint8_t setting_parameterIndex = 0;
@@ -66,15 +66,34 @@ static const char *SETTING_PARAMETER_VALUE_MIDINOTES[73] = {
 "C#6", " D6", "D#6", " E6", " F6", "F#6", " G6", "G#6", " A6", "A#6", " B6", " C7", // MIDI notes 85-96
 };
 static const char *SETTING_PARAMETER_VALUE_SDIR[3] = {"Fwd", "Bck", "Alt"};
-static const char *SETTING_PARAMETER_VALUE_SNLN[3] = {"/16", "1/8", "1/4"};
+
+/**
+ *       24    1 /  4th
+ *       16    1 /  4th triplets
+ *       12    1 /  8th
+ *        8    1 /  8th triplets
+ *        6    1 / 16th
+ *        4    1 / 16th triplets
+ */
+static const char *SETTING_PARAMETER_VALUE_SNLN[6]        = {"16t", "16 ", " 8t", " 8 ", " 4t", " 4 "};
+static const uint8_t SETTING_PARAMETER_VALUE_SNLN_VAL[6]  = {
+  CLOCK_INCREMENT_SIXTEENTH_TRIPLETS, 
+  CLOCK_INCREMENT_SIXTEENTHS, 
+  CLOCK_INCREMENT_EIGHTH_TRIPLETS,
+  CLOCK_INCREMENT_EIGHTHS,
+  CLOCK_INCREMENT_QUARTER_TRIPLETS,
+  CLOCK_INCREMENT_QUARTERS
+};
+// inverse lookup, values of 255 should never be hit. those with values 0-1 indicate the index in SETTING_PARAMETER_VALUE_SNLN_VAL
+static const uint8_t SETTING_PARAMETER_VALUE_SNLN_INV[25] = {255, 255, 255, 255, 0, 255, 1, 255, 2, 255, 255, 255, 3, 255, 255, 255, 4, 255, 255, 255, 255, 255, 255, 255, 5};
 
 uint8_t setting_parameterValue_Mchn    = 10;
 int8_t setting_parameterValue_tmp     = setting_parameterValue_Mchn; // first parameter to show is Mchn so we're copying that value
 uint8_t setting_parameterValue_Mgte[8] = {50, 50, 50, 50, 50, 50, 50, 50};
 uint8_t setting_parameterValue_Mvel[8] = {100, 100, 100, 100, 100, 100, 100, 100};
 uint8_t setting_parameterValue_Spul[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+uint8_t setting_parameterValue_Snln[8] = {1, 1, 1, 1, 1, 1, 1, 1}; // this is not the value but the array index in SETTING_PARAMETER_VALUE_SNLN
 uint8_t setting_parameterValue_Sdir[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-uint8_t setting_parameterValue_Snln[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Srda[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t setting_parameterValue_Srdc[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -145,6 +164,20 @@ void setting_changeSwing(int32_t delta) {
 }
 
 /**
+ * returns the MIDI channel of the instrument
+ */
+uint8_t setting_getMidiChannel() {
+  return setting_parameterValue_Mchn;
+}
+
+/**
+ * returns the configured MIDI velocity
+ */
+uint8_t setting_getMidiVelocity(uint8_t seqId) {
+  return setting_parameterValue_Mvel[seqId];
+}
+
+/**
  * returns the current parameter name
  */
 char* setting_getParameter() {
@@ -187,7 +220,8 @@ void setting_changeParameter(int32_t delta) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = setting_parameterValue_Sdir[seqId];
   } else if (setting_parameterIndex == 8) {
-    // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
+    // SETTING_PARAMETER_NAME_SNLN - sequence note length, we're storing an array index here, not the actual value
+    //setting_parameterValue_Snln[seqId] = SETTING_PARAMETER_VALUE_SNLN_INV[sequencer_getNoteLen(seqId)];
     setting_parameterValue_tmp = setting_parameterValue_Snln[seqId];
   } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
@@ -199,7 +233,7 @@ void setting_changeParameter(int32_t delta) {
 }
 
 /**
- * returns the current parameter value
+ * returns the current parameter value for display
  */
 char* setting_getParameterValue() {
   char* returnValue = (char *) malloc(3);
@@ -303,7 +337,7 @@ void setting_changeParameterValue(int32_t delta) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SDIR_MAX, max(SETTING_PARAMETER_VALUE_SDIR_MIN, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 8) {
-    // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
+    // SETTING_PARAMETER_NAME_SNLN - sequence note length, storing an array index here, not a value
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SNLN_MAX, max(SETTING_PARAMETER_VALUE_SNLN_MIN, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
@@ -348,8 +382,9 @@ void setting_persistParameterValue() {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_Sdir[seqId] = setting_parameterValue_tmp;
   } else if (setting_parameterIndex == 8) {
-    // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
-    setting_parameterValue_Snln[seqId] = setting_parameterValue_tmp;
+    // SETTING_PARAMETER_NAME_SNLN - sequence note length
+    setting_parameterValue_Snln[seqId] = setting_parameterValue_tmp; // storing the array index
+    sequencer_setNoteLen(seqId, SETTING_PARAMETER_VALUE_SNLN_VAL[setting_parameterValue_tmp]); // storing the clock intervals
   } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
     setting_parameterValue_Srda[seqId] = setting_parameterValue_tmp;
