@@ -4,24 +4,25 @@ drum sequencer based on a Teensy 3.6
 **At this time the whole project is in a very bare bones state probably isn't even working. If you're looking for a functional module then I'm afraid you'll have to come back at a later time.**
 
 ## Features
-- selectable MIDI-out channel
-- clock: internal or volca-style pulse from a 3.5mm jack
+- (DONE) selectable MIDI-out channel
+- clock: 
+  - (DONE) internal
+  - volca-style pulse from a 3.5mm jack
 - globally adjustable swing
 
 ## Details on sequences
-- freely selectable sequence length
-  - maximum length limited only by hardware
+- (DONE) freely selectable sequence length
 - active steps 
-  - defined by euclidian rythm
-  - setting a new euclidian rythm clears "overlap" if previous sequence was longer
+  - (DONE) defined by euclidian rythm
+  - (DONE) setting a new euclidian rythm clears "overlap" if previous sequence was longer
   - (DONE) individual steps can be toggled as well (traditional sequencing)
 - sequence offset can be set
 - whole sequence can be muted without clearing
 - sequence step direction: forward, backward, alternating
 - sequence speed: 1/16, 1/8, 1/4, triplets on/off
-- selectable gate length per step
-- selectable velocity per step
-- selectable MIDI note per sequence
+- (DONE) selectable gate length per sequence
+- (DONE) selectable velocity per sequence
+- (DONEselectable MIDI note per sequence
 - randomization
   - amount of randomization per sequence
   - chance of randomization per sequence
