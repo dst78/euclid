@@ -2,6 +2,11 @@
  * data structures and handler functions for settings
  */
 
+#define SETTING_OUTPUT_MIN 0
+#define SETTING_OUTPUT_MAX 2
+static const char SETTING_OUTPUT_OPTIONS[3] = {SETTING_OUTPUT_MIDI, SETTING_OUTPUT_AUDIO, SETTING_OUTPUT_OFF};
+uint8_t setting_output = SETTING_OUTPUT_MIN;
+
 char setting_clocksource = SETTING_CLOCKSOURCE_INTERNAL;
 
 #define SETTING_BPM_MIN 30
@@ -119,6 +124,20 @@ void setting_changeClocksource(int32_t delta) {
     setting_clocksource = SETTING_CLOCKSOURCE_CV;
     clock_endInternal();
   }
+}
+
+/**
+ * returns the active output type
+ */
+char setting_getOutput() {
+  return SETTING_OUTPUT_OPTIONS[setting_output];
+}
+
+/**
+ * changes the output type
+ */
+void setting_changeOutput(int32_t delta) {
+  setting_output = min(SETTING_OUTPUT_MAX, max(SETTING_OUTPUT_MIN, setting_output + delta));
 }
 
 /**

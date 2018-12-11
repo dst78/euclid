@@ -102,7 +102,7 @@ void display_updateMenu() {
 
   lcd.setCursor(0, 0);
   lcd.write(display_seqIndicator[display_getSeqId()]);
-  lcd.write(" ");
+  lcd.write(setting_getOutput());
   lcd.write(clocksource);
   if (clocksource == SETTING_CLOCKSOURCE_INTERNAL) {
     lcd.write(setting_getBPM());
@@ -440,7 +440,10 @@ void display_encoderMove(int32_t delta) {
   
   if (display_cursorY == 0) {
     // menu row
-    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+      setting_changeOutput(delta);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
       setting_changeClocksource(delta);
       
     } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
@@ -502,7 +505,13 @@ void display_encoderMove(int32_t delta) {
  */
 void display_encoderButtonPress() {
   if (display_cursorY == 0) {
-    if (display_menuPosX == DISPLAY_MENUPOS_CLOCK
+    if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+      // output was changed, hop to input position
+      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+      display_cursorX = display_menuPosX;
+      lcd.setCursor(display_cursorX, display_cursorY);
+      
+    } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK
         && setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
       // clock source was changed to internal, hop to BPM position
       display_menuPosX = DISPLAY_MENUPOS_BPM;
@@ -530,10 +539,13 @@ void display_encoderButtonPress() {
 void display_moveCursorLeft() {  
   // menu row
   display_cursorY = display_menuPosY;
-  
-  if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
-    // currently at clock source, wrap around
+
+  if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+    // currently at output, wrap around
     display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    // currently at clock source
+    display_menuPosX = DISPLAY_MENUPOS_OUTPUT;
   } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
     // currently at BPM
     display_menuPosX = DISPLAY_MENUPOS_CLOCK;
@@ -566,8 +578,11 @@ void display_moveCursorLeft() {
 void display_moveCursorRight() {  
   // menu row
   display_cursorY = display_menuPosY;
-  
-  if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+
+  if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+    // currently at output
+    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+  } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
     // currently at clock source
     if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
       display_menuPosX = DISPLAY_MENUPOS_SWING; 
@@ -585,7 +600,7 @@ void display_moveCursorRight() {
     display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
   } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
     // currently at parameter value, wrap around
-    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+    display_menuPosX = DISPLAY_MENUPOS_OUTPUT;
   }
   
   display_cursorX = display_menuPosX;

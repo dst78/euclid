@@ -4,12 +4,13 @@
  * constants which signify pin assignments etc are defined within the script 
  * that cares and won't be accessed across scripts
  */
-#define VERSION "0.5.0"
+#define VERSION "0.5.1"
 
 // related to the LCD display
 #define DISPLAY_EDITMODE_MENU 'm'
 #define DISPLAY_EDITMODE_GRID 'g'
 
+#define DISPLAY_MENUPOS_OUTPUT 1
 #define DISPLAY_MENUPOS_CLOCK 2
 #define DISPLAY_MENUPOS_BPM 4
 #define DISPLAY_MENUPOS_SWING 7
@@ -24,6 +25,10 @@
 #define DISPLAY_SEQINDICATOR_CLAVE        'C'
 #define DISPLAY_SEQINDICATOR_TOM_HI       'T'
 #define DISPLAY_SEQINDICATOR_TOM_LO       't'
+
+#define SETTING_OUTPUT_AUDIO         'A'
+#define SETTING_OUTPUT_MIDI          'M'
+#define SETTING_OUTPUT_OFF           ' '
 
 #define SETTING_CLOCKSOURCE_CV       'C'
 #define SETTING_CLOCKSOURCE_INTERNAL 'I'
