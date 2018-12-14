@@ -184,7 +184,6 @@ char* setting_getBPM() {
 
 /**
  * changes the BPM up or down, change is immediate
- * @todo must update the timer interrupt for internal clock
  */
 void setting_changeBPM(int32_t delta) {
   setting_bpm = min(SETTING_BPM_MAX, max(SETTING_BPM_MIN, setting_bpm + delta));
