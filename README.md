@@ -22,7 +22,7 @@ drum sequencer based on a Teensy 3.6
 - (DONE) sequence speed: 1/16, 1/16 triplets, 1/8, 1/8 triplets 1/4, 1/4 triplets
 - selectable gate length per sequence
 - (DONE) selectable velocity per sequence
-- (DONEselectable MIDI note per sequence
+- (DONE) selectable MIDI note per sequence
 - randomization
   - amount of randomization per sequence
   - chance of randomization per sequence

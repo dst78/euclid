@@ -21,6 +21,7 @@ int8_t setting_swing = SETTING_SWING_MIN;
 #define SETTING_PARAMETER_NAME_MNTE "Mnte" // sequence MIDI note
 #define SETTING_PARAMETER_NAME_MGTE "Mgte" // sequence gate length
 #define SETTING_PARAMETER_NAME_MVEL "Mvel" // sequence note velocity
+#define SETTING_PARAMETER_NAME_SVOL "Svol" // sequence volume (when using audio out)
 #define SETTING_PARAMETER_NAME_SLEN "Slen" // sequence length
 #define SETTING_PARAMETER_NAME_SPUL "Spul" // active sequence pulses - this is in the Euclidian Rythm sense
 #define SETTING_PARAMETER_NAME_SOFF "Soff" // sequence offset - this is in the Euclidian Rythm sense
@@ -44,21 +45,25 @@ int8_t setting_swing = SETTING_SWING_MIN;
 #define SETTING_PARAMETER_VALUE_SNLN_MIN 0
 #define SETTING_PARAMETER_VALUE_SNLN_MAX 5
 
+#define SETTING_PARAMETER_VALUE_SVOL_MIN 0
+#define SETTING_PARAMETER_VALUE_SVOL_MAX 15
+
 
 uint8_t setting_parameterIndex = 0;
-uint8_t setting_parameterNum = 11;
+uint8_t setting_parameterNum = 12;
 static const char *SETTING_PARAMETER_NAMES[] = {
   SETTING_PARAMETER_NAME_MCHN, // 0 - MIDI channel for the instrument
   SETTING_PARAMETER_NAME_MNTE, // 1  - sequence MIDI note
   SETTING_PARAMETER_NAME_MGTE, // 2  - sequence MIDI gate length
   SETTING_PARAMETER_NAME_MVEL, // 3  - sequence MIDI note velocity
-  SETTING_PARAMETER_NAME_SLEN, // 4  - sequence length
-  SETTING_PARAMETER_NAME_SPUL, // 5  - active sequence pulses - this is in the Euclidian Rythm sense
-  SETTING_PARAMETER_NAME_SOFF, // 6  - sequence offset - this is in the Euclidian Rythm sense
-  SETTING_PARAMETER_NAME_SDIR, // 7  - sequence play direction - forward, backward, alternating
-  SETTING_PARAMETER_NAME_SNLN, // 8  - sequence note length - 16th, 8th, 4th
-  SETTING_PARAMETER_NAME_SRDA, // 9  - sequence randomization amount
-  SETTING_PARAMETER_NAME_SRDC, // 10 - sequence randomization chance
+  SETTING_PARAMETER_NAME_SVOL,  // 4 - sequence volume
+  SETTING_PARAMETER_NAME_SLEN, // 4 5  - sequence length
+  SETTING_PARAMETER_NAME_SPUL, // 5 6 - active sequence pulses - this is in the Euclidian Rythm sense
+  SETTING_PARAMETER_NAME_SOFF, // 6 7 - sequence offset - this is in the Euclidian Rythm sense
+  SETTING_PARAMETER_NAME_SDIR, // 7 8 - sequence play direction - forward, backward, alternating
+  SETTING_PARAMETER_NAME_SNLN, // 8 9 - sequence note length - 16th, 8th, 4th
+  SETTING_PARAMETER_NAME_SRDA, // 9 10 - sequence randomization amount
+  SETTING_PARAMETER_NAME_SRDC // 10 11- sequence randomization chance
 };
 
 static const char *SETTING_PARAMETER_VALUE_MIDINOTES[73] = {
@@ -226,26 +231,29 @@ void setting_changeParameter(int32_t delta) {
   } else if (setting_parameterIndex == 3) {
     // SETTING_PARAMETER_NAME_MVEL - sequence MIDI note velocity
     setting_parameterValue_tmp = setting_parameterValue_Mvel[seqId];
-  } else if (setting_parameterIndex == 4) {
+  } else if (setting_parameterIndex == 4) {  
+    // SETTING_PARAMETER_NAME_SVOL - sequence volume
+    setting_parameterValue_tmp = sequencer_getVolume(seqId);
+  } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
     setting_parameterValue_tmp = sequencer_getLen(seqId);
-  } else if (setting_parameterIndex == 5) {
+  } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = setting_parameterValue_Spul[seqId];
-  } else if (setting_parameterIndex == 6) {
+  } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset
     setting_parameterValue_tmp = 0;
-  } else if (setting_parameterIndex == 7) {
+  } else if (setting_parameterIndex == 8) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = setting_parameterValue_Sdir[seqId];
-  } else if (setting_parameterIndex == 8) {
+  } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SNLN - sequence note length, we're storing an array index here, not the actual value
     //setting_parameterValue_Snln[seqId] = SETTING_PARAMETER_VALUE_SNLN_INV[sequencer_getNoteLen(seqId)];
     setting_parameterValue_tmp = setting_parameterValue_Snln[seqId];
-  } else if (setting_parameterIndex == 9) {
+  } else if (setting_parameterIndex == 10) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
     setting_parameterValue_tmp = setting_parameterValue_Srda[seqId];
-  } else if (setting_parameterIndex == 10) {  
+  } else if (setting_parameterIndex == 11) {  
     // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
     setting_parameterValue_tmp = setting_parameterValue_Srdc[seqId];
   } 
@@ -270,25 +278,28 @@ char* setting_getParameterValue() {
   } else if (setting_parameterIndex == 3) {
     // SETTING_PARAMETER_NAME_MVEL - sequence MIDI note velocity
     sprintf(returnValue, "%3d", setting_parameterValue_Mvel[seqId]);
-  } else if (setting_parameterIndex == 4) {
+  } else if (setting_parameterIndex == 4) {  
+    // SETTING_PARAMETER_NAME_SVOL - sequence volume
+    sprintf(returnValue, "%3d", 10 + 6 * sequencer_getVolume(seqId));  
+  } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
     sprintf(returnValue, "%3d", sequencer_getLen(seqId));
-  } else if (setting_parameterIndex == 5) {
+  } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     sprintf(returnValue, "%3d", setting_parameterValue_Spul[seqId]);
-  } else if (setting_parameterIndex == 6) {
+  } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset
     sprintf(returnValue, "%3d", 0);
-  } else if (setting_parameterIndex == 7) {
+  } else if (setting_parameterIndex == 8) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SDIR[setting_parameterValue_Sdir[seqId]]);
-  } else if (setting_parameterIndex == 8) {
+  } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SNLN[setting_parameterValue_Snln[seqId]]);
-  } else if (setting_parameterIndex == 9) {
+  } else if (setting_parameterIndex == 10) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
     sprintf(returnValue, "%3d", setting_parameterValue_Srda[seqId]);
-  } else if (setting_parameterIndex == 10) {  
+  } else if (setting_parameterIndex == 11) {  
     // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
     sprintf(returnValue, "%3d", setting_parameterValue_Srdc[seqId]);  
   }
@@ -310,10 +321,13 @@ char* setting_getParameterTmpValue() {
   if (setting_parameterIndex == 1) {
     // SETTING_PARAMETER_NAME_MNTE - sequence MIDI note
     strcpy(returnValue, SETTING_PARAMETER_VALUE_MIDINOTES[setting_parameterValue_tmp]);
-  } else if (setting_parameterIndex == 7) {
+  } else if (setting_parameterIndex == 4) {
+    // SETTING_PARAMETER_NAME_SVOL - sequence volume
+    sprintf(returnValue, "%3d", 10 + 6 * setting_parameterValue_tmp);
+  } else if (setting_parameterIndex == 8) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SDIR[setting_parameterValue_tmp]);
-  } else if (setting_parameterIndex == 8) {
+  } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SNLN - sequence note length - 16th, 8th, 4th
     strcpy(returnValue, SETTING_PARAMETER_VALUE_SNLN[setting_parameterValue_tmp]);
   } else {
@@ -343,25 +357,28 @@ void setting_changeParameterValue(int32_t delta) {
     // SETTING_PARAMETER_NAME_MVEL - sequence MIDI note velocity
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_MVEL_MAX, max(SETTING_PARAMETER_VALUE_MVEL_MIN, setting_parameterValue_tmp + delta));
   } else if (setting_parameterIndex == 4) {
+    // SETTING_PARAMETER_NAME_SVOL - sequence volume
+    setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SVOL_MAX, max(SETTING_PARAMETER_VALUE_SVOL_MIN, setting_parameterValue_tmp + delta));   
+  } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
     setting_parameterValue_tmp = min(32, max(0, setting_parameterValue_tmp + delta));
-  } else if (setting_parameterIndex == 5) {
+  } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses - this is in the Euclidian Rythm sense
     setting_parameterValue_tmp = min(sequencer_getLen(seqId), max(0, setting_parameterValue_tmp + delta));    
-  } else if (setting_parameterIndex == 6) {
+  } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset - this is in the Euclidian Rythm sense
     uint8_t offsetWidth = sequencer_getLen(seqId) - 1;
     setting_parameterValue_tmp = min(offsetWidth, max(-1 * offsetWidth, setting_parameterValue_tmp + delta));
-  } else if (setting_parameterIndex == 7) {
+  } else if (setting_parameterIndex == 8) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SDIR_MAX, max(SETTING_PARAMETER_VALUE_SDIR_MIN, setting_parameterValue_tmp + delta));
-  } else if (setting_parameterIndex == 8) {
+  } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SNLN - sequence note length, storing an array index here, not a value
     setting_parameterValue_tmp = min(SETTING_PARAMETER_VALUE_SNLN_MAX, max(SETTING_PARAMETER_VALUE_SNLN_MIN, setting_parameterValue_tmp + delta));
-  } else if (setting_parameterIndex == 9) {
+  } else if (setting_parameterIndex == 10) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
     setting_parameterValue_tmp = min(100, max(0, setting_parameterValue_tmp + delta));  
-  } else if (setting_parameterIndex == 10) {
+  } else if (setting_parameterIndex == 11) {
     // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
     setting_parameterValue_tmp = min(100, max(0, setting_parameterValue_tmp + delta));   
   }
@@ -387,27 +404,30 @@ void setting_persistParameterValue() {
     // SETTING_PARAMETER_NAME_MVEL - sequence MIDI note velocity
     setting_parameterValue_Mvel[seqId] = setting_parameterValue_tmp;
   } else if (setting_parameterIndex == 4) {
+    // SETTING_PARAMETER_NAME_SVOL - sequence volume
+    sequencer_setVolume(seqId, setting_parameterValue_tmp);
+  } else if (setting_parameterIndex == 5) {
     // SETTING_PARAMETER_NAME_SLEN - sequence length
     sequencer_setLen(seqId, setting_parameterValue_tmp);
-  } else if (setting_parameterIndex == 5) {
+  } else if (setting_parameterIndex == 6) {
     // SETTING_PARAMETER_NAME_SPUL - active sequence pulses 
     // persisting this will overwrite the existing pattern with an Euclidian Rythm 
     setting_parameterValue_Spul[seqId] = setting_parameterValue_tmp;
     sequencer_setSeq(seqId, euclid(sequencer_getLen(seqId), setting_parameterValue_Spul[seqId], 0));
-  } else if (setting_parameterIndex == 6) {
+  } else if (setting_parameterIndex == 7) {
     // SETTING_PARAMETER_NAME_SOFF - sequence offset
     sequencer_applyOffset(seqId, setting_parameterValue_tmp);
-  } else if (setting_parameterIndex == 7) {
+  } else if (setting_parameterIndex == 8) {
     // SETTING_PARAMETER_NAME_SDIR - sequence play direction - forward, backward, alternating
     setting_parameterValue_Sdir[seqId] = setting_parameterValue_tmp;
-  } else if (setting_parameterIndex == 8) {
+  } else if (setting_parameterIndex == 9) {
     // SETTING_PARAMETER_NAME_SNLN - sequence note length
     setting_parameterValue_Snln[seqId] = setting_parameterValue_tmp; // storing the array index
     sequencer_setNoteLen(seqId, SETTING_PARAMETER_VALUE_SNLN_VAL[setting_parameterValue_tmp]); // storing the clock intervals
-  } else if (setting_parameterIndex == 9) {
+  } else if (setting_parameterIndex == 10) {
     // SETTING_PARAMETER_NAME_SRDA - sequence randomization amount
     setting_parameterValue_Srda[seqId] = setting_parameterValue_tmp;
-  } else if (setting_parameterIndex == 10) {
+  } else if (setting_parameterIndex == 11) {
     // SETTING_PARAMETER_NAME_SRDC - sequence randomization chance
     setting_parameterValue_Srdc[seqId] = setting_parameterValue_tmp;
   }

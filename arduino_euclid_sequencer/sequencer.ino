@@ -21,32 +21,34 @@ uint32_t sequencer_seqData[8] = {
 // information about mute-state, position and length
 /**
  * Additional data related to a sequence. This is a 32-bit field, divided up as follows
- * M... ...N NNNN NNOO OOOO PPPP PPLL LLLL
- * - . - represents an unused bit
- * - M - contains the information whether the sequence is muted (HI = muted)
- * - L - overall sequence length, 6-bit for up to 32 steps (technically we could store 0-63 but that makes no sense)
- * - P - current sequence position, 0-31, 5-bit 
- * - N - MIDI note (this is an indirect index. the actual note will be offset by the amount of SETTING_PARAMETER_VALUE_MNTE_MIN)
- * - O - MIDI note length: (the numbers reflect the clock incrememnts)
- *       see the CLOCK_INCREMENT_* constants for actual values
+ * M..V VVVN NNNN NNOO OOOO PPPP PPLL LLLL
+ * . - represents an unused bit
+ * M - contains the information whether the sequence is muted (HI = muted)
+ * L - overall sequence length, 6-bit for up to 32 steps (technically we could store 0-63 but that makes no sense)
+ * P - current sequence position, 0-31, 5-bit 
+ * N - MIDI note (this is an indirect index. the actual note will be offset by the amount of SETTING_PARAMETER_VALUE_MNTE_MIN)
+ * O - MIDI note length: (the numbers reflect the clock incrememnts)
+ *     see the CLOCK_INCREMENT_* constants for actual values
+ * V - sequence volume (used in audio output mode only). each increment raises the volume by ~6%
  */
 uint32_t sequencer_seqInfo[8] = {
-//  M........OOOOONNNNNNNPPPPPLLLLLL
-  0b00000000000110010010000000001000,
-  0b00000000000110010011000000000000,
-  0b00000000000110010101000000000000,
-  0b00000000000110010111000000000000,
-  0b00000000000110010010100000000000,
-  0b00000000000110100101100000000000,
-  0b00000000000110011000000000000000,
-  0b00000000000110010100100000000000,
+//  M....VVVVOOOOONNNNNNNPPPPPLLLLLL
+  0b00000111100110010010000000001000,
+  0b00000111100110010011000000000000,
+  0b00000111100110010101000000000000,
+  0b00000111100110010111000000000000,
+  0b00000111100110010010100000000000,
+  0b00000111100110100101100000000000,
+  0b00000111100110011000000000000000,
+  0b00000111100110010100100000000000,
 };
-//                                  M........OOOOONNNNNNNPPPPPLLLLLL
+//                                  M....VVVVOOOOONNNNNNNPPPPPLLLLLL
 uint32_t sequencer_maskInfoMute = 0b10000000000000000000000000000000;
 uint32_t sequencer_maskInfoLen  = 0b00000000000000000000000000111111;
 uint32_t sequencer_maskInfoPos  = 0b00000000000000000000011111000000;
 uint32_t sequencer_maskInfoMnte = 0b00000000000000111111100000000000;
 uint32_t sequencer_maskInfoSnln = 0b00000000011111000000000000000000;
+uint32_t sequencer_maskInfoSvol = 0b00000111100000000000000000000000;
 
 /**
  * returns a sequence as 32 bit number
@@ -223,6 +225,20 @@ uint8_t sequencer_getNoteLen(uint8_t seqId) {
  */
 void sequencer_setNoteLen(uint8_t seqId, uint8_t clockIntervals) {
   sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoSnln) | ((clockIntervals << 18) & sequencer_maskInfoSnln);
+}
+
+/**
+ * returns the raw volume information (a 16th of 100% with each interval)
+ */
+uint8_t sequencer_getVolume(uint8_t seqId) {
+  return (sequencer_seqInfo[seqId] & sequencer_maskInfoSvol) >> 23;
+}
+
+/**
+ * sets the sequence volume. only the lowest four bits will be used
+ */
+void sequencer_setVolume(uint8_t seqId, uint8_t vol) {
+  sequencer_seqInfo[seqId] = (sequencer_seqInfo[seqId] & ~sequencer_maskInfoSvol) | ((vol << 23) & sequencer_maskInfoSvol);
 }
 
 /**
