@@ -623,8 +623,13 @@ void display_encoderButtonPress() {
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
       // menu parameter value needs to be stored
-      setting_persistParameterValue(); // @todo no need to update this all the time
-      display_updateSequenceRow(display_seqPosY-1);
+      setting_persistParameterValue(); 
+      // update sequence row only when needed
+      uint8_t parameterIndex = setting_getParameterIndex();
+      if (parameterIndex >= 5 
+          && parameterIndex <= 7) {
+        display_updateSequenceRow(display_seqPosY-1);
+      }
     }  
     
     lcd.setCursor(display_cursorX, display_cursorY);

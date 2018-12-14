@@ -233,6 +233,13 @@ char* setting_getParameterName() {
 }
 
 /**
+ * returns the numerical index of a parameter
+ */
+uint8_t setting_getParameterIndex() {
+  return setting_parameterIndex;
+}
+
+/**
  * changes the current parameter up or down
  */
 void setting_changeParameter(int32_t delta) {
