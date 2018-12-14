@@ -24,7 +24,7 @@ LiquidCrystal lcd(LCD_PIN_RS, LCD_PIN_EN, LCD_PIN_D4, LCD_PIN_D5, LCD_PIN_D6, LC
 uint8_t display_cursorX, display_cursorY;
 // Stored cursor position in the menu row - used in display_moveCursorToMenu() 
 // these are display (!) positions. Y will always be 0, X is locked to certain steps
-uint8_t display_menuPosX = 2;
+uint8_t display_menuPosX = DISPLAY_MENU_CURSORPOS_CLOCK;
 uint8_t display_menuPosY = 0;
 // Stored cursor position in the sequence section - used in display_moveCursorToSeq()
 // these are display (!) positions, not sequence offsets. rows are 1-3, cols are 2-17
@@ -98,24 +98,99 @@ void display_splashScreen() {
 }
 
 void display_updateMenu() {
-  char clocksource = setting_getClocksource();
 
-  lcd.setCursor(0, 0);
+  display_updateMenuPartSequence(true);  
+  display_updateMenuPartOutput(false); // lcd.write(setting_getOutput());
+  display_updateMenuPartClocksource(true); // lcd.write(clocksource);
+  display_updateMenuPartBPM(false);
+  display_updateMenuPartSwing(true);
+  
+  display_updateMenuPartParameterName(true); 
+  display_updateMenuPartParameterValue(true);
+  
+  
+  lcd.setCursor(display_cursorX, display_cursorY);
+}
+
+/**
+ * updates the sequence indicator in the menu
+ */
+void display_updateMenuPartSequence(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_SEQUENCE, 0);
+  }
+  
   lcd.write(display_seqIndicator[display_getSeqId()]);
+}
+
+/**
+ * updates the output type indicator part in the menu
+ */
+void display_updateMenuPartOutput(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_OUTPUT, 0);
+  }
   lcd.write(setting_getOutput());
-  lcd.write(clocksource);
-  if (clocksource == SETTING_CLOCKSOURCE_INTERNAL) {
+}
+
+/**
+ * updates the clocksource indicator part of the menu
+ */
+void display_updateMenuPartClocksource(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_CLOCK, 0);
+  }
+  
+  lcd.write(setting_getClocksource());
+}
+
+/**
+ * updates the BPM indicator part of the menu
+ */
+void display_updateMenuPartBPM(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_BPM, 0);
+  }
+  
+  if (setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
     lcd.write(setting_getBPM());
   } else {
     lcd.write("   ");
+  }  
+}
+
+/**
+ * updates the swing setting part of the menu
+ */
+void display_updateMenuPartSwing(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_SWING, 0);
   }
+  
   lcd.write("s");
   lcd.write(setting_getSwing());
+}
+
+/**
+ * updates the parameter name display part of the menu
+ */
+void display_updateMenuPartParameterName(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_PARAMETER_NAME, 0);
+  }
   
-  lcd.write("   ");
   lcd.write(setting_getParameter());
-  lcd.write(" ");
-  if (display_menuPosX != DISPLAY_MENUPOS_PARAMETER_VALUE
+}
+
+/**
+ * updates the parameter value display part of the menu
+ */
+void display_updateMenuPartParameterValue(bool reposition) {
+  if (reposition) {
+    lcd.setCursor(DISPLAY_MENU_POS_PARAMETER_VALUE, 0);
+  }
+  
+  if (display_menuPosX != DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE
       || display_cursorY != 0) {
     // show stored value when not editing the parameter value
     lcd.write(setting_getParameterValue());
@@ -123,8 +198,6 @@ void display_updateMenu() {
     // show temporary value when editing the parameter value
     lcd.write(setting_getParameterTmpValue());
   }
-  
-  lcd.setCursor(display_cursorX, display_cursorY);
 }
 
 /**
@@ -313,7 +386,6 @@ void display_toggleEditMode() {
     display_moveCursorToSeq();
     
   } else {
-    lcd.setCursor(0, 0);
     display_moveCursorToMenu();
   }
   
@@ -440,28 +512,27 @@ void display_encoderMove(int32_t delta) {
   
   if (display_cursorY == 0) {
     // menu row
-    if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+    if (display_menuPosX == DISPLAY_MENU_CURSORPOS_OUTPUT) {
       setting_changeOutput(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_CLOCK) {
       setting_changeClocksource(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_BPM) {
       setting_changeBPM(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_SWING) {
       setting_changeSwing(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_NAME) {
       // parameter
       setting_changeParameter(delta);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
       // parameter value
       setting_changeParameterValue(delta);
     }
     display_updateMenu(); 
-    lcd.setCursor(display_cursorX, display_cursorY);
     
   } else {
     // sequence row
@@ -505,31 +576,29 @@ void display_encoderMove(int32_t delta) {
  */
 void display_encoderButtonPress() {
   if (display_cursorY == 0) {
-    if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+    if (display_menuPosX == DISPLAY_MENU_CURSORPOS_OUTPUT) {
       // output was changed, hop to input position
-      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_CLOCK;
       display_cursorX = display_menuPosX;
-      lcd.setCursor(display_cursorX, display_cursorY);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_CLOCK
         && setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
       // clock source was changed to internal, hop to BPM position
-      display_menuPosX = DISPLAY_MENUPOS_BPM;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_BPM;
       display_cursorX = display_menuPosX;
-      lcd.setCursor(display_cursorX, display_cursorY);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_NAME) {
       // menu parameter name was selected, move cursor to parameter value
-      display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE;
       display_cursorX = display_menuPosX;
-      lcd.setCursor(display_cursorX, display_cursorY);
       
-    } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
       // menu parameter value needs to be stored
-      setting_persistParameterValue();
+      setting_persistParameterValue(); // @todo no need to update this all the time
       display_updateSequenceRow(display_seqPosY-1);
-      lcd.setCursor(display_cursorX, display_cursorY);
     }  
+    
+    lcd.setCursor(display_cursorX, display_cursorY);
   }
 }
 
@@ -540,30 +609,31 @@ void display_moveCursorLeft() {
   // menu row
   display_cursorY = display_menuPosY;
 
-  if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+  if (display_menuPosX == DISPLAY_MENU_CURSORPOS_OUTPUT) {
     // currently at output, wrap around
-    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_CLOCK) {
     // currently at clock source
-    display_menuPosX = DISPLAY_MENUPOS_OUTPUT;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_OUTPUT;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_BPM) {
     // currently at BPM
-    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_CLOCK;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_SWING) {
     // currently at swing value
     if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
-      display_menuPosX = DISPLAY_MENUPOS_CLOCK;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_CLOCK;
     } else {
-      display_menuPosX = DISPLAY_MENUPOS_BPM;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_BPM;
     }
     
-  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_NAME) {
     // currently at parameter
-    display_menuPosX = DISPLAY_MENUPOS_SWING;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_SWING;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
     // currently at parameter value
-    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_PARAMETER_NAME;
   }
+  
   display_cursorX = display_menuPosX;
   lcd.setCursor(display_cursorX, display_cursorY);
 
@@ -579,28 +649,28 @@ void display_moveCursorRight() {
   // menu row
   display_cursorY = display_menuPosY;
 
-  if (display_menuPosX == DISPLAY_MENUPOS_OUTPUT) {
+  if (display_menuPosX == DISPLAY_MENU_CURSORPOS_OUTPUT) {
     // currently at output
-    display_menuPosX = DISPLAY_MENUPOS_CLOCK;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_CLOCK) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_CLOCK;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_CLOCK) {
     // currently at clock source
     if (setting_getClocksource() == SETTING_CLOCKSOURCE_CV) {
-      display_menuPosX = DISPLAY_MENUPOS_SWING; 
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_SWING; 
     } else {
-      display_menuPosX = DISPLAY_MENUPOS_BPM;
+      display_menuPosX = DISPLAY_MENU_CURSORPOS_BPM;
     }
-  } else if (display_menuPosX == DISPLAY_MENUPOS_BPM) {
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_BPM) {
     // currently at BPM
-    display_menuPosX = DISPLAY_MENUPOS_SWING;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_SWING) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_SWING;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_SWING) {
     // currently at swing value
-    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_NAME;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_NAME) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_PARAMETER_NAME;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_NAME) {
     // currently at parameter
-    display_menuPosX = DISPLAY_MENUPOS_PARAMETER_VALUE;
-  } else if (display_menuPosX == DISPLAY_MENUPOS_PARAMETER_VALUE) {
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE;
+  } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
     // currently at parameter value, wrap around
-    display_menuPosX = DISPLAY_MENUPOS_OUTPUT;
+    display_menuPosX = DISPLAY_MENU_CURSORPOS_OUTPUT;
   }
   
   display_cursorX = display_menuPosX;
