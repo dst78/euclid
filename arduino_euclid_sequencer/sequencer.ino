@@ -144,6 +144,8 @@ void sequencer_handlePositionIncrement(uint8_t increment) {
   
   for (uint8_t seqId = 0; seqId < 8; seqId++) {
 
+    // @todo add logic that a sequence stays in sync with the others when it just now received its first pulses (in the middle of a beat)
+    //       or when it was muted for some time
     if (!sequencer_isMuted(seqId)
         && sequencer_getLen(seqId) > 0) {
       snln = sequencer_getNoteLen(seqId);
