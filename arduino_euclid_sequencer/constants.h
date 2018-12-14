@@ -26,6 +26,7 @@
 #define SETTING_CLOCKSOURCE_CV       'C'
 #define SETTING_CLOCKSOURCE_INTERNAL 'I'
 
+// clock ticks per quarter note
 #define CLOCK_TIMER_RESOLUTION 24
 
 #define CLOCK_INCREMENT_QUARTERS 24

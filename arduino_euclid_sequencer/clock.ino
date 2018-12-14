@@ -13,7 +13,8 @@ IntervalTimer clock_internal;
 
 // timer interval in ms
 float clock_interval;
-volatile uint8_t clock_ticks;
+volatile uint16_t clock_ticks;
+uint16_t clock_ticksMax = 32 * CLOCK_TIMER_RESOLUTION; 
 
 /**
  * call this during setup()
@@ -22,8 +23,8 @@ void clock_init() {
   pinMode(CLOCK_LED_PIN, OUTPUT);
   digitalWrite(CLOCK_LED_PIN, LOW);
   
-  clock_setInterval();
   if (setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
+    clock_setInterval(setting_getRawBPM());
     clock_useInternal();
   }
 }
@@ -41,13 +42,6 @@ void clock_useInternal() {
  */
 void clock_useExternal() {
   clock_internal.end();
-}
-
-/**
- * sets the interval timer of the internal clock to CLOCK_TIMER_RESOLUTION times the BPM value
- */
-void clock_setInterval() {
-  clock_setInterval(setting_getRawBPM());
 }
 
 /**
@@ -71,42 +65,44 @@ void clock_setInterval(uint8_t bpm) {
  */
 void clock_timerCallback() {
   clock_ticks++;
-  
-  if (clock_ticks % CLOCK_TIMER_RESOLUTION == 0) {
-    // quarter note
-    clock_ticks = 0;
-    digitalWrite(CLOCK_LED_PIN, HIGH);
 
+  // reset ticks if 32 quarter notes have passed
+  if (clock_ticks > clock_ticksMax) {
+    clock_ticks = 0;
+  }
+  
+  if (clock_ticks % CLOCK_INCREMENT_QUARTERS == 2) {
+    digitalWrite(CLOCK_LED_PIN, LOW);
+  }
+  
+  if (clock_ticks % CLOCK_INCREMENT_QUARTERS == 0) {
+    // quarter note
+    digitalWrite(CLOCK_LED_PIN, HIGH);
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_QUARTERS);
   }
 
-  if (clock_ticks % ((CLOCK_TIMER_RESOLUTION * 2) / 3) == 0) {
+  if (clock_ticks % CLOCK_INCREMENT_QUARTER_TRIPLETS == 0) {
     // quarter note triplets
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_QUARTER_TRIPLETS);
   }
   
-  if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 2) == 0) {
+  if (clock_ticks % CLOCK_INCREMENT_EIGHTHS == 0) {
     // eighth note
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_EIGHTHS);
   }
 
-  if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 3) == 0) {
+  if (clock_ticks % CLOCK_INCREMENT_EIGHTH_TRIPLETS == 0) {
     // eighth note triplets
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_EIGHTH_TRIPLETS);
   }
   
-  if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 4) == 0) {
+  if (clock_ticks % CLOCK_INCREMENT_SIXTEENTHS == 0) {
     // sixteenth note 
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_SIXTEENTHS);
   }
 
-  if (clock_ticks % (CLOCK_TIMER_RESOLUTION / 6) == 0) {
+  if (clock_ticks % CLOCK_INCREMENT_SIXTEENTH_TRIPLETS == 0) {
     // sixteenth note triplets
     sequencer_handlePositionIncrement(CLOCK_INCREMENT_SIXTEENTH_TRIPLETS);
-  }
-  
-  if (clock_ticks == 2) {
-    digitalWrite(CLOCK_LED_PIN, LOW);
-  }
-  
+  }  
 }
