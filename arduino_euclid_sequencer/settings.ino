@@ -50,20 +50,20 @@ int8_t setting_swing = SETTING_SWING_MIN;
 
 
 uint8_t setting_parameterIndex = 0;
-uint8_t setting_parameterNum = 12;
+uint8_t setting_parameterNum = 11;
 static const char *SETTING_PARAMETER_NAMES[] = {
-  SETTING_PARAMETER_NAME_MCHN, // 0 - MIDI channel for the instrument
+  SETTING_PARAMETER_NAME_MCHN, // 0  - MIDI channel for the instrument
   SETTING_PARAMETER_NAME_MNTE, // 1  - sequence MIDI note
   SETTING_PARAMETER_NAME_MGTE, // 2  - sequence MIDI gate length
   SETTING_PARAMETER_NAME_MVEL, // 3  - sequence MIDI note velocity
-  SETTING_PARAMETER_NAME_SVOL,  // 4 - sequence volume
-  SETTING_PARAMETER_NAME_SLEN, // 4 5  - sequence length
-  SETTING_PARAMETER_NAME_SPUL, // 5 6 - active sequence pulses - this is in the Euclidian Rythm sense
-  SETTING_PARAMETER_NAME_SOFF, // 6 7 - sequence offset - this is in the Euclidian Rythm sense
-  SETTING_PARAMETER_NAME_SDIR, // 7 8 - sequence play direction - forward, backward, alternating
-  SETTING_PARAMETER_NAME_SNLN, // 8 9 - sequence note length - 16th, 8th, 4th
-  SETTING_PARAMETER_NAME_SRDA, // 9 10 - sequence randomization amount
-  SETTING_PARAMETER_NAME_SRDC // 10 11- sequence randomization chance
+  SETTING_PARAMETER_NAME_SVOL, // 4  - sequence volume
+  SETTING_PARAMETER_NAME_SLEN, // 5  - sequence length
+  SETTING_PARAMETER_NAME_SPUL, // 6  - active sequence pulses - this is in the Euclidian Rythm sense
+  SETTING_PARAMETER_NAME_SOFF, // 7  - sequence offset - this is in the Euclidian Rythm sense
+  SETTING_PARAMETER_NAME_SDIR, // 8  - sequence play direction - forward, backward, alternating
+  SETTING_PARAMETER_NAME_SNLN, // 9  - sequence note length - 16th, 8th, 4th
+  SETTING_PARAMETER_NAME_SRDA, // 10 - sequence randomization amount
+  SETTING_PARAMETER_NAME_SRDC  // 11 - sequence randomization chance
 };
 
 static const char *SETTING_PARAMETER_VALUE_MIDINOTES[73] = {
@@ -204,7 +204,7 @@ uint8_t setting_getMidiVelocity(uint8_t seqId) {
 /**
  * returns the current parameter name
  */
-char* setting_getParameter() {
+char* setting_getParameterName() {
   char* returnValue = (char *) malloc(4);
   strcpy(returnValue, SETTING_PARAMETER_NAMES[setting_parameterIndex]);
   return returnValue;

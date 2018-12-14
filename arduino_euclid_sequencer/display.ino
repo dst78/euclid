@@ -20,6 +20,26 @@
 // Initialize the library with the interface pins
 LiquidCrystal lcd(LCD_PIN_RS, LCD_PIN_EN, LCD_PIN_D4, LCD_PIN_D5, LCD_PIN_D6, LCD_PIN_D7);
 
+// splashscreen duration in ms
+#define DISPLAY_SPLASHSCREEN_DURATION 500
+
+// position of the visible cursor when a menu segment is active
+#define DISPLAY_MENU_CURSORPOS_OUTPUT 1
+#define DISPLAY_MENU_CURSORPOS_CLOCK 3
+#define DISPLAY_MENU_CURSORPOS_BPM 5
+#define DISPLAY_MENU_CURSORPOS_SWING 9
+#define DISPLAY_MENU_CURSORPOS_PARAMETER_NAME 12
+#define DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE 17
+
+// position where the menu segement begins (irrespective of where the visible cursor will be)
+#define DISPLAY_MENU_POS_SEQUENCE 0
+#define DISPLAY_MENU_POS_OUTPUT 1
+#define DISPLAY_MENU_POS_CLOCK 3
+#define DISPLAY_MENU_POS_BPM 4
+#define DISPLAY_MENU_POS_SWING 8
+#define DISPLAY_MENU_POS_PARAMETER_NAME 12
+#define DISPLAY_MENU_POS_PARAMETER_VALUE 17
+
 // Current cursor position
 uint8_t display_cursorX, display_cursorY;
 // Stored cursor position in the menu row - used in display_moveCursorToMenu() 
@@ -65,6 +85,7 @@ void display_init() {
   lcd.begin(20, 4);
 
   display_splashScreen();
+  delay(DISPLAY_SPLASHSCREEN_DURATION);
   display_gui();
 }
 
@@ -93,12 +114,9 @@ void display_splashScreen() {
   lcd.setCursor(6, 3);
   lcd.print("v ");
   lcd.print(VERSION);
-
-  delay(500);
 }
 
 void display_updateMenu() {
-
   display_updateMenuPartSequence(true);  
   display_updateMenuPartOutput(false); // lcd.write(setting_getOutput());
   display_updateMenuPartClocksource(true); // lcd.write(clocksource);
@@ -107,7 +125,6 @@ void display_updateMenu() {
   
   display_updateMenuPartParameterName(true); 
   display_updateMenuPartParameterValue(true);
-  
   
   lcd.setCursor(display_cursorX, display_cursorY);
 }
@@ -179,7 +196,7 @@ void display_updateMenuPartParameterName(bool reposition) {
     lcd.setCursor(DISPLAY_MENU_POS_PARAMETER_NAME, 0);
   }
   
-  lcd.write(setting_getParameter());
+  lcd.write(setting_getParameterName());
 }
 
 /**
@@ -314,9 +331,9 @@ void display_updateSequenceStep() {
   }
   Serial.println("");
 
-  #if DEBUG_SEQUENCER
-  sequence_debug(seq);
-  #endif
+    #if DEBUG_SEQUENCER
+    sequence_debug(seq);
+    #endif
   #endif  
 }
 
@@ -388,8 +405,6 @@ void display_toggleEditMode() {
   } else {
     display_moveCursorToMenu();
   }
-  
-  display_updateMenu();
 }
 
 /**
@@ -414,6 +429,10 @@ void display_moveCursorToMenu() {
 void display_moveCursorToSeq() {
   display_cursorX = display_seqPosX;
   display_cursorY = display_seqPosY;
+  
+  display_updateMenuPartSequence(true);
+  display_updateMenuPartParameterValue(true);
+  
   lcd.setCursor(display_cursorX, display_cursorY);
 }
 
@@ -429,7 +448,8 @@ void display_moveCursorUp() {
     display_seqPosY = max(1, display_seqPosY - 1);
     
     display_calculateSeqId();
-    display_updateMenu();
+    display_updateMenuPartSequence(true);
+    display_updateMenuPartParameterValue(true);
       
   } else if (display_seqPosY == 1) {
     newOffset = max(0, display_seqRowOffset - 1);
@@ -438,7 +458,8 @@ void display_moveCursorUp() {
       display_seqRowOffset = newOffset;
       
       display_calculateSeqId();
-      display_updateMenu();
+      display_updateMenuPartSequence(true);
+      display_updateMenuPartParameterValue(true);
       display_updateSequenceRow(0);
       display_updateSequenceRow(1);
       display_updateSequenceRow(2);
@@ -471,7 +492,8 @@ void display_moveCursorDown() {
     display_seqPosY = min(3, display_seqPosY + 1);
     
     display_calculateSeqId();
-    display_updateMenu();
+    display_updateMenuPartSequence(true);
+    display_updateMenuPartParameterValue(true);
     
   } else if (display_seqPosY == 3) {
     newOffset = min(5, display_seqRowOffset+1);
@@ -480,7 +502,8 @@ void display_moveCursorDown() {
       display_seqRowOffset = newOffset;
       
       display_calculateSeqId();
-      display_updateMenu();
+      display_updateMenuPartSequence(true);
+      display_updateMenuPartParameterValue(true);
       display_updateSequenceRow(0);
       display_updateSequenceRow(1);
       display_updateSequenceRow(2);
@@ -514,25 +537,31 @@ void display_encoderMove(int32_t delta) {
     // menu row
     if (display_menuPosX == DISPLAY_MENU_CURSORPOS_OUTPUT) {
       setting_changeOutput(delta);
+      display_updateMenuPartOutput(true);
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_CLOCK) {
       setting_changeClocksource(delta);
+      display_updateMenuPartClocksource(true);
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_BPM) {
       setting_changeBPM(delta);
+      display_updateMenuPartBPM(true);
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_SWING) {
       setting_changeSwing(delta);
+      display_updateMenuPartSwing(true);
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_NAME) {
       // parameter
       setting_changeParameter(delta);
+      display_updateMenuPartParameterName(true);
+      display_updateMenuPartParameterValue(true);
       
     } else if (display_menuPosX == DISPLAY_MENU_CURSORPOS_PARAMETER_VALUE) {
       // parameter value
       setting_changeParameterValue(delta);
+      display_updateMenuPartParameterValue(true);
     }
-    display_updateMenu(); 
     
   } else {
     // sequence row
