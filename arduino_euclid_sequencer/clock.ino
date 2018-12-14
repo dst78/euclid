@@ -23,13 +23,15 @@ void clock_init() {
   digitalWrite(CLOCK_LED_PIN, LOW);
   
   clock_setInterval();
-  clock_startInternal();
+  if (setting_getClocksource() == SETTING_CLOCKSOURCE_INTERNAL) {
+    clock_useInternal();
+  }
 }
 
 /**
  * starts the internal clock
  */
-void clock_startInternal() {
+void clock_useInternal() {
   clock_ticks = 0;
   clock_internal.begin(clock_timerCallback, clock_interval);
 }
@@ -37,7 +39,7 @@ void clock_startInternal() {
 /**
  * stops the internal clock
  */
-void clock_endInternal() {
+void clock_useExternal() {
   clock_internal.end();
 }
 

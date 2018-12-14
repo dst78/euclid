@@ -119,15 +119,14 @@ char setting_getClocksource() {
 
 /**
  * toggles between clocksources, change is immediate
- * @todo must trigger the appropriate function in the clock management
  */
 void setting_changeClocksource(int32_t delta) {
   if (setting_clocksource == SETTING_CLOCKSOURCE_CV) {
     setting_clocksource = SETTING_CLOCKSOURCE_INTERNAL;
-    clock_startInternal();
+    clock_useInternal();
   } else {
     setting_clocksource = SETTING_CLOCKSOURCE_CV;
-    clock_endInternal();
+    clock_useExternal();
   }
 }
 
