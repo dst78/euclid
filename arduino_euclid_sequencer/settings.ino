@@ -142,7 +142,29 @@ char setting_getOutput() {
  * changes the output type
  */
 void setting_changeOutput(int32_t delta) {
-  setting_output = min(SETTING_OUTPUT_MAX, max(SETTING_OUTPUT_MIN, setting_output + delta));
+  if (setting_output == SETTING_OUTPUT_MIN) {
+    // MIDI
+    if (delta < 0) {
+      setting_output = SETTING_OUTPUT_MAX;
+    } else if (delta > 0) {
+      setting_output++;
+    }
+    
+  } else if (setting_output == SETTING_OUTPUT_MAX) {
+    // no output
+    if (delta < 0) {
+      setting_output--;
+    } else if (delta > 0) {
+      setting_output = SETTING_OUTPUT_MIN;
+    }
+    
+  } else {
+    if (delta < 0) {
+      setting_output--;
+    } else if (delta > 0) {
+      setting_output++;
+    } 
+  }
 }
 
 /**
