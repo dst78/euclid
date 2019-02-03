@@ -35,7 +35,9 @@ void thumbstick_init() {
 void thumbstick_update() {
   uint32_t now = millis();
   int16_t thumbX, thumbY;
+  #if DEBUG_THUMBSTICK
   boolean dbg = false;
+  #endif
 
   if (now - thumbstick_lastRefresh >= THUMBSTICK_REFRESH_INTERVAL) {
     thumbstick_lastRefresh = now;
@@ -45,31 +47,38 @@ void thumbstick_update() {
 
     if (thumbX > thumbstick_limitL) {
       display_moveCursorLeft();
+      #if DEBUG_THUMBSTICK
       dbg = true;
+      #endif
       
     } else if (thumbX < thumbstick_limitR) {
       display_moveCursorRight();
+      #if DEBUG_THUMBSTICK
       dbg = true;
+      #endif
       
     } else if (thumbY > thumbstick_limitU) {
       display_moveCursorUp();
+      #if DEBUG_THUMBSTICK
       dbg = true;
+      #endif
       
     } else if (thumbY < thumbstick_limitD) {
       display_moveCursorDown();
+      #if DEBUG_THUMBSTICK
       dbg = true;
+      #endif
     }
 
+    #if DEBUG_THUMBSTICK
     if (dbg) {
-      #if DEBUG_THUMBSTICK
       Serial.print("thumbstick ");
       Serial.print(thumbX);
       Serial.print("/");
       Serial.println(thumbY);
-      #endif
     }
+    #endif
   }
-
 }
 
 /**
